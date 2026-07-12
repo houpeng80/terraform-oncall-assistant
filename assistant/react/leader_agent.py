@@ -43,8 +43,8 @@ class LeaderAgent:
                 stream_mode=["messages", "updates"],
                 version="v2",
             )
-            print(f"\n--- begin to deal question ---")
             for chunk in stream:
+                # print(chunk)
                 if self.agent_config.print_thinking_process:
                     if chunk["type"] == "updates":
                         for node_name, update in chunk["data"].items():
@@ -59,7 +59,6 @@ class LeaderAgent:
                         if isinstance(chunk["data"][0], AIMessageChunk) and chunk["data"][0].content is not None:
                             print(chunk["data"][0].content, end="", flush=True)
 
-            print(f"\n--- ✅ question has been deal ---")
         except Exception as e:
             print(f"\n--- ❌ fail to deal question: {e}---")
 
@@ -68,7 +67,7 @@ class LeaderAgent:
 
     def create_assistant_agent(self):
         agent = create_agent(
-            name=LeaderAgent,
+            name=AGENT_NAME,
             model=self.model,
             checkpointer=self.check_pointer,
             system_prompt=self.build_system_prompt_template(),
@@ -79,7 +78,7 @@ class LeaderAgent:
         return agent
 
     def build_system_prompt_template(self) -> str:
-        return apply_prompt_template(agent_name=AGENT_NAME)
+        return apply_prompt_template(user_id=self.config["configurable"]["user_id"], agent_name=AGENT_NAME,)
 
     def build_middlewares(self) -> list[AgentMiddleware]:
         middlewares: list[AgentMiddleware] = [

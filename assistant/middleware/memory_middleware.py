@@ -67,8 +67,8 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
         # Filter to only keep user inputs and final assistant responses
         filtered_messages = filter_messages_for_memory(messages)
 
-        user_messages = filtered_messages[0]
-        assistant_messages = filtered_messages[1]
+        user_messages = [m for m in filtered_messages if getattr(m, "type", None) == "human"]
+        assistant_messages = [m for m in filtered_messages if getattr(m, "type", None) == "ai"]
 
         if not user_messages or not assistant_messages:
             return None

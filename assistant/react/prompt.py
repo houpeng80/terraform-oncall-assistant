@@ -1,5 +1,6 @@
-import datetime
 import logging
+
+from langgraph.config import get_config
 
 from assistant.config.config import get_app_config
 from assistant.memory.prompt import format_memory_for_injection
@@ -98,7 +99,6 @@ You: "Let me thinking and then deal this problem..." [proceed]
     1. 
 - provided error information and inquired about the cause of the error, you should give a result by follow steps:
     1. get the error code first from the user message, 
-
 </ability>
 
 <response_style>
@@ -187,11 +187,12 @@ def get_agent_soul(agent_name: str | None) -> str:
     return ""
 
 def apply_prompt_template(
+    user_id: str,
     agent_name: str | None = None,
     available_skills: set[str] | None = None,
 ) -> str:
     # Get memory context
-    memory_context = _get_memory_context(agent_name)
+    memory_context = _get_memory_context(user_id)
 
     # Get skills section
     # skills_section = get_skills_prompt_section(available_skills, app_config=app_config)
