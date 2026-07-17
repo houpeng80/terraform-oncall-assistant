@@ -37,7 +37,7 @@ class MemoryStorage(abc.ABC):
     """Abstract base class for memory storage providers."""
 
     @abc.abstractmethod
-    def load(self, user_id: str) -> dict[str, Any]:
+    def load(self, user_id: str) -> dict[str, Any] | str:
         """Load memory data for the given user_id."""
         pass
 
@@ -47,7 +47,7 @@ class MemoryStorage(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def save(self, memory_data: dict[str, Any], user_id: str) -> bool:
+    def save(self, memory_data: dict[str, Any] | str, user_id: str) -> bool:
         """Save memory data for the given user_id."""
         pass
 

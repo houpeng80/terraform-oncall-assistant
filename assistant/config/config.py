@@ -2,8 +2,12 @@ import os
 import yaml
 
 from pathlib import Path
+
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from typing import Self
+
+load_dotenv(encoding="utf-8")
 
 def _default_config_candidates() -> tuple[Path, ...]:
     backend_dir = Path(__file__).resolve().parents[2]
@@ -14,13 +18,14 @@ class AgentConfig(BaseModel):
     """Config for the Code generate agent"""
 
     log_level: str = Field(default="info", description="Logging level for code generate agent (debug/info/warning/error)")
-    temperature: int = Field(default=0, description="The temperature of the model")
+    temperature: float = Field(default=0.5, description="The temperature of the model")
     max_tokens: int = Field(default=1024, description="The max tokens of the model")
     timeout: int = Field(default=300, description="The timeout of the model")
     max_retries: int = Field(default=3, description="The max retries of the model")
-    summarization_trigger_messages: int = Field(default=20, description="The messages count when summarization is triggered")
-    summarization_trigger_tokens: int = Field(default=1000, description="The tokens count when summarization is triggered")
-    model_type: str = Field(default="deepseek", description="Model type for code generate agent (openai/xiaomi/deepseek/qwen/glm)")
+    summarization_trigger_messages: int = Field(default=10, description="The messages count when summarization is triggered")
+    summarization_trigger_tokens: int = Field(default=100, description="The tokens count when summarization is triggered")
+    model_type: str = Field(default="deepseek", description="Model type for agent (openai/xiaomi/deepseek/qwen/glm)")
+    embedding_model_type: str = Field(default="qwen_embedding", description="Model type for embedding (qwen_embedding)")
     print_thinking_process: bool = Field(default=True, description="Whether print the thinking process")
     user_memory: bool = Field(default=True, description="Whether use user memory or not")
     debounce_seconds: int = Field(default=10, ge=1, le=30, description="Seconds to wait before processing queued updates (debounce)")
@@ -32,6 +37,7 @@ class AgentConfig(BaseModel):
         le=4000,
         description="Maximum tokens to use for memory injection",
     )
+    model_cycle_max: int = Field(default=10,description="Maximum model cycle for one request")
 
 
     @classmethod
@@ -94,4 +100,4 @@ def get_app_config() -> AgentConfig:
     return _app_config
 
 if __name__ == "__main__":
-    print(_default_config_candidates()[0])
+    print(get_app_config())

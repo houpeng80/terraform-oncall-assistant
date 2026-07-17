@@ -1,108 +1,42 @@
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
 import os
-from dotenv import load_dotenv
-from langchain_core.messages import SystemMessage, HumanMessage
-from mem0 import Memory
 
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from mem0.configs.base import MemoryConfig
+from assistant.rag.es_manager import es_keyword_search
 
-load_dotenv(encoding="utf-8")
+# 阿里云向量配置
+os.environ["OPENAI_API_KEY"] = "sk-xxx"
+os.environ["OPENAI_BASE_URL"] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+embeddings = OpenAIEmbeddings(model="text-embedding-v3")
+chroma_db = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
 
-# embedding_mode = OpenAIEmbeddings(
-#     model=os.getenv("QWEN_MODEL"),
-#     base_url=os.getenv("QWEN_BASE_URL"),
-#     api_key=os.getenv("QWEN_API_KEY"),
-#     dimensions=1024
-# )
+def multi_retrieval(query: str, top_k=4):
+    # 1. ES关键词召回
+    es_res = es_keyword_search(query, top_k)
+    # 2. Chroma语义向量召回
+    vec_res = chroma_db.similarity_search_with_score(query, k=top_k)
 
-llm = ChatOpenAI(
-    model=os.getenv("DEEPSEEK_MODEL"),
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url=os.getenv("DEEPSEEK_BASE_URL")
-)
-
-config = {
-    # "llm": {
-    #     "provider": "openai",
-    #     "config": {
-    #         "model": os.getenv("DEEPSEEK_MODEL"),  # 或 deepseek-reasoner
-    #         "api_key": os.getenv("DEEPSEEK_API_KEY"),
-    #         "temperature": 0.2,
-    #         "max_tokens": 2000,
-    #         "openai_base_url": os.getenv("DEEPSEEK_BASE_URL")
-    #     }
-    # },
-    "embedder": {
-        "provider": "openai",
-        "config": {
-            "model": os.getenv("QWEN_MODEL"),
-            "api_key": os.getenv("QWEN_API_KEY"),
-            "openai_base_url": os.getenv("QWEN_BASE_URL"),
-            "embedding_dims": 1024,
+    # 统一转换成 chunk_id 维度数据
+    combine = {}
+    # ES结果存入字典
+    for item in es_res:
+        cid = item["chunk_id"]
+        combine[cid] = {
+            "content": item["content"],
+            "es_score": item["score"],
+            "vec_score": 0.0
         }
-    },
-    "vector_store": {
-        "provider": "chroma",
-        "config": {
-            "path": "./my_chroma_memories",  # 本地持久化路径
-            "collection_name": "user_memories"
-        }
-    }
-}
-
-#
-# embedder = OpenAIEmbeddings(
-#     model=os.getenv("QWEN_MODEL"),
-#     api_key=os.getenv("QWEN_API_KEY"),
-#     base_url=os.getenv("QWEN_BASE_URL"),
-#     dimensions=1024,
-# )
-
-# 方式1：直接传入已经实例化的对象
-# config = {
-#     "vector_store": {
-#         "provider": "chroma",
-#         "config": {
-#             "path": "./my_chroma_memories",  # 本地持久化路径
-#             "collection_name": "user_memories"
-#         }
-#     }
-# }
-
-# 初始化 Memory
-# cfg = MemoryConfig()
-memory = Memory.from_config(config)
-
-# 用户 ID（用于隔离不同用户的记忆）
-user_id = "user_local_001"
-
-# === 添加记忆 ===
-print("正在添加记忆...")
-# memory.add("我住在杭州，喜欢西湖边散步。", user_id=user_id)
-# memory.add("我对人工智能和大模型开发很感兴趣。", user_id=user_id)
-# memory.add("我不喝咖啡，只喝茶。", user_id=user_id)
-
-# === 查询相关记忆 ===
-query = "用户住哪？"
-print(f"\n查询问题: {query}")
-# results = memory.search(query, user_id=user_id)
-results = memory.search(query, filters={'user_id': user_id})
-
-print("检索到的相关记忆:")
-for i, mem in enumerate(results['results'], 1):
-    print(f"{i}. {mem['memory']}")
-    # print(f"{i}. {mem['text']}")
-
-# === （可选）让 LLM 基于记忆生成回答 ===
-# 注意：Mem0 本身不直接提供“带记忆的问答”接口，但你可以组合使用
-context = "\n".join([mem["memory"] for mem in results['results']])
-prompt = f"""你是一个贴心的助手，请根据用户的记忆回答问题。
-用户的记忆：
-{context}
-
-
-请直接回答，不要提及“根据记忆”等字样。"""
-
-response = llm.invoke([SystemMessage(content=prompt), HumanMessage(content=query)])
-# response = memory.llm.generate_response(messages=[{"role": "system", "content": prompt},{"role": "user", "content": query}])
-print(f"\nLLM 回答: {response}")
+    # 向量结果合并，更新相似度分数
+    for doc, vec_score in vec_res:
+        cid = doc.metadata["chunk_id"]
+        if cid in combine:
+            combine[cid]["vec_score"] = vec_score
+        else:
+            combine[cid] = {
+                "content": doc.page_content,
+                "es_score": 0.0,
+                "vec_score": vec_score
+            }
+    # 简单融合排序：向量相似度为主
+    final_list = sorted(combine.values(), key=lambda x: x["vec_score"], reverse=True)
+    return final_list

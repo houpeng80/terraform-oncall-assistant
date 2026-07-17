@@ -299,6 +299,9 @@ class MemoryUpdater:
 
             # invoke model to summary messages
             response = await model.ainvoke(prompt, config={"run_name": "memory_agent"})
+            if len(response.content) == 0:
+                logger.info("No memory content to update")
+                return True
 
             return await asyncio.to_thread(
                 self.finalize_update,
@@ -374,24 +377,14 @@ class MemoryUpdater:
     ) -> bool:
         """Parse the model response, apply updates, and persist memory."""
         response_text = extract_text(response_content).strip()
-        print("============ response_tex t==================")
-        print(f"{response_text}")
-        print("==============================")
-
         if response_text.startswith("```"):
             lines = response_text.split("\n")
             response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
 
         update_data = json.loads(response_text)
-        print("============= update_data =================")
-        print(f"{update_data}")
-        print("==============================")
         # Deep-copy before in-place mutation so a subsequent save() failure
         # cannot corrupt the still-cached original object reference.
         updated_memory = self.apply_updates(copy.deepcopy(current_memory), update_data, thread_id)
-        print("============= updated_memory =================")
-        print(f"{updated_memory}")
-        print("==============================")
         return get_memory_storage().save(updated_memory, user_id)
 
     @staticmethod

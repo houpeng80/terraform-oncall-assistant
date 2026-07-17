@@ -61,7 +61,7 @@ class TokenUsageMiddleware(AgentMiddleware[AgentState]):
             state["output_token_statistics"],
             state["total_token_statistics"],
         )
-        return state
+        return None
 
     @override
     async def aafter_agent(self, state: TokenUsageMiddlewareState, runtime: Runtime) -> dict[str, Any] | None:
@@ -72,4 +72,4 @@ class TokenUsageMiddleware(AgentMiddleware[AgentState]):
             state["output_token_statistics"],
             state["total_token_statistics"],
         )
-        return state
+        return None

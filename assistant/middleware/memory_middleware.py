@@ -1,7 +1,6 @@
 """Middleware for memory mechanism."""
-
 import logging
-from typing import override
+from typing import override, Any
 
 from langchain.agents import AgentState
 from langchain.agents.middleware import AgentMiddleware
@@ -16,9 +15,6 @@ logger = logging.getLogger(__name__)
 
 class MemoryMiddlewareState(AgentState):
     """Compatible with the `ThreadState` schema."""
-
-    pass
-
 
 class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
     """Middleware that queues conversation for memory update after agent execution.
@@ -37,7 +33,7 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
         self._agent_name = agent_name
 
     @override
-    def after_agent(self, state: MemoryMiddlewareState, runtime: Runtime) -> dict | None:
+    def after_agent(self, state: MemoryMiddlewareState, runtime: Runtime) -> dict[str, Any]  | None:
         """Queue conversation for memory update after agent completes.
 
         Args:
@@ -66,7 +62,6 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
 
         # Filter to only keep user inputs and final assistant responses
         filtered_messages = filter_messages_for_memory(messages)
-
         user_messages = [m for m in filtered_messages if getattr(m, "type", None) == "human"]
         assistant_messages = [m for m in filtered_messages if getattr(m, "type", None) == "ai"]
 

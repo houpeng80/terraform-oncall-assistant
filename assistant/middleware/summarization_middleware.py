@@ -1,11 +1,12 @@
 import asyncio
 import logging
-from typing import runtime_checkable, Protocol, override
+from typing import override
 
 from langchain.agents import AgentState
 from langchain.agents.middleware import SummarizationMiddleware
-from langchain_core.messages import HumanMessage, ToolMessage, AIMessage, AnyMessage
+from langchain_core.messages import HumanMessage, RemoveMessage
 from langgraph.config import get_config
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 
 from assistant.memory.message_processing import filter_messages_for_memory, detect_correction, detect_reinforcement
@@ -45,16 +46,17 @@ class ContextSummarizationMiddleware(SummarizationMiddleware):
         logger.info(f" begin to summarization the context message, messages length: {messages.__len__()}")
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
-        summary = self._create_summary(messages_to_summarize)
-        new_messages = self._build_new_messages(summary)
-        logger.info(f" end summarization the context message, messages length: {new_messages.__len__()}")
+        # summary = self._create_summary(messages_to_summarize)
+        # new_messages = self._build_new_messages(summary)
+        logger.info(f" end summarization the context message")
 
         # 将要压缩的messages异步更新持久记忆
         asyncio.run(self.aupdate_memory(messages_to_summarize))
 
         return {
             "messages": [
-                *new_messages,
+                RemoveMessage(id=REMOVE_ALL_MESSAGES),
+                # *new_messages,
                 *preserved_messages,
             ]
         }
@@ -71,16 +73,20 @@ class ContextSummarizationMiddleware(SummarizationMiddleware):
         if cutoff_index <= 0:
             return None
 
-        logger.info(f" begin to summarization the context message, messages length: {messages.__len__()}")
+        logger.info(" begin to summarization the context message, messages length: ", messages.__len__())
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
-        summary = await self._acreate_summary(messages_to_summarize)
-        new_messages = self._build_new_messages(summary)
-        logger.info(f" end summarization the context message, messages length: {new_messages.__len__()}")
+        # summary = await self._acreate_summary(messages_to_summarize)
+        # new_messages = self._build_new_messages(summary)
+        logger.info("end summarization the context message")
+
+        # 将要压缩的messages异步更新持久记忆
+        asyncio.run(self.aupdate_memory(messages_to_summarize))
 
         return {
             "messages": [
-                *new_messages,
+                RemoveMessage(id=REMOVE_ALL_MESSAGES),
+                # *new_messages,
                 *preserved_messages,
             ]
         }
@@ -97,8 +103,8 @@ class ContextSummarizationMiddleware(SummarizationMiddleware):
         user_id = get_config().get("configurable", {}).get("user_id")
 
         filtered_messages = filter_messages_for_memory(summary_messages)
-        user_messages = filtered_messages[0]
-        assistant_messages = filtered_messages[1]
+        user_messages = [m for m in filtered_messages if getattr(m, "type", None) == "human"]
+        assistant_messages = [m for m in filtered_messages if getattr(m, "type", None) == "ai"]
         if not user_messages or not assistant_messages:
             return
 

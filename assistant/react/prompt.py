@@ -1,12 +1,46 @@
 import logging
 
-from langgraph.config import get_config
-
 from assistant.config.config import get_app_config
 from assistant.memory.prompt import format_memory_for_injection
 from assistant.memory.updater import get_memory_data
 
 logger = logging.getLogger(__name__)
+
+CHECK_RESOURCE_EXISTS_STEPS = """
+<step>
+1. The resource name provided should start with `huaweicloud`, if not, an error should be returned and give a prompt
+2. The service name should be provided, if not, an error should be returned and give a prompt
+3. The resource type should be provided, if not, an error should be returned and give a prompt. The value can only be `data_source` or a `resource`.
+4. You should complete the task follow the steps:
+   1. get the latest huaweicloud terraform provider latest version
+   2. check code to the latest version
+   3. search the resource by resource_type, resource_name and service_name
+      - if the result is true, then get the resource info by resource_type and resource_name, indicates the resource has been published
+      - if the result is false:
+         1. check code to the master version
+         2. search the resource by resource_type, resource_name and service_name
+            - if the result is true, then get the resource info by resource_type and resource_name, indicates the resource has been completed, will be published in next version
+            - if the result is false, it indicates the resource is not supported
+</step>
+"""
+
+CHECK_API_HAS_BEEN_SUPPORTED_STEPS = """
+<step>
+1. The resource name should be provided and should start with `huaweicloud`, if not, an error should be returned and give a prompt
+2. The service name should be provided, if not, an error should be returned and give a prompt
+3. The resource type should be provided by the user, if not, an error should be returned and give a prompt. The value can only be `data_source` or a `resource`.
+4. You should complete the task follow the steps:
+   1. get the latest huaweicloud terraform provider latest version
+   2. check code to the latest version
+   3. search the resource by api_method, api_url and service_name
+      - if the result is true, then return the supported resource name, indicates the resource has been published
+      - if the result is false:
+         1. check code to the master version
+         2. search the resource by resource_name and service_name
+            - if the result is true, then return the supported resource name, indicates the resource has been completed, will be published in next version
+            - if the result is false, it indicates the resource is not supported
+</step>
+"""
 
 SYSTEM_PROMPT_TEMPLATE = """
 <role>
@@ -87,10 +121,14 @@ You: "Let me thinking and then deal this problem..." [proceed]
 </clarification_system>
 
 <ability>
-- get current on call personnel, use suitable tool to look up the corresponding link and return it directly.
-- check whether the resource or data source is exists, use suitable tool to check whether exists and return,
-- the official docs links should be returned at the same time
-- check whether the resource is supported in a specific region, return the fixed message: **terraform不区分region**
+- get huaweicloud terraform provider latest version
+- get current on-call personnel, use suitable tool to look up the corresponding link and return it directly.
+- get huaweicloud terraform provider reference docs, use suitable tool to look up the corresponding link and return it directly.
+- check whether the resource is supported in a special region, return fixed answer: **terraform不区分region**
+- check whether the resource or data source is exists with following step:
+
+  {check_resource_exists_steps}
+  
 - check whether the API has been supported by the terraform, you should give a result by follow steps:
     1. 
     2.
@@ -99,6 +137,8 @@ You: "Let me thinking and then deal this problem..." [proceed]
     1. 
 - provided error information and inquired about the cause of the error, you should give a result by follow steps:
     1. get the error code first from the user message, 
+    
+- the official docs links should be returned at the same time
 </ability>
 
 <response_style>
@@ -203,6 +243,7 @@ def apply_prompt_template(
         soul=get_agent_soul(agent_name),
         # skills_section=skills_section,
         memory_context=memory_context,
+        check_resource_exists_steps=CHECK_RESOURCE_EXISTS_STEPS,
     )
 
     return prompt

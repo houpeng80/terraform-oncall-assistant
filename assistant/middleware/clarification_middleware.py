@@ -8,10 +8,9 @@ from typing import override
 
 from langchain.agents import AgentState
 from langchain.agents.middleware import AgentMiddleware
-from langchain_core.messages import ToolMessage
-from langgraph.graph import END
+from langchain_core.messages import ToolMessage, HumanMessage
 from langgraph.prebuilt.tool_node import ToolCallRequest
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 
 logger = logging.getLogger(__name__)
 
@@ -149,15 +148,25 @@ class ClarificationMiddleware(AgentMiddleware[ClarificationMiddlewareState]):
             name="ask_clarification",
         )
 
+        answer = interrupt(formatted_message)
+        print(f"> Received an input from the interrupt: {answer}")
+
         # Return a Command that:
         # 1. Adds the formatted tool message
         # 2. Interrupts execution by going to __end__
         # Note: We don't add an extra AIMessage here - the frontend will detect
         # and display ask_clarification tool messages directly
         return Command(
-            update={"messages": [tool_message]},
-            goto=END,
+            update={
+                "messages": [tool_message],
+                "jump_to": "end"  # 👈 关键：明确告知循环结束
+            }
+            # 可以保留 goto=END，但 jump_to 在 create_agent 中更关键
         )
+        # return Command(
+        #     update={"messages": [human_message]},
+        #     # goto=END,
+        # )
 
     @override
     def wrap_tool_call(

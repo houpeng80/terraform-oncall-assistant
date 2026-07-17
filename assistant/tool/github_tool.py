@@ -1,50 +1,197 @@
+import base64
+import os
+
 import requests
-from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
+from langchain_core.tools import tool
 
-def search_github(keyword):
-    # GitHub API的搜索URL，q参数用于搜索
-    url = f"https://api.github.com/search/repositories?q={keyword}"
-    headers = {
-        "Accept": "application/vnd.github.v3+json"
-    }
+from assistant.utils.github_utils import get_latest_version, pull_code, checkout_code, \
+    search_resource_by_name, search_resource_by_key_word
 
-    # GitHub API速率限制，可能需要认证（例如使用token）来避免限制
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()  # 如果响应状态码不是200，抛出异常
+load_dotenv(encoding="utf-8")
 
-    data = response.json()
-    if data["total_count"] > 0:
-        print(f"找到 {data['total_count']} 个仓库，包含关键字 '{keyword}'")
-        for repo in data["items"]:
-            print(f"仓库名: {repo['name']}, URL: {repo['html_url']}")
-    else:
-        print(f"没有找到包含关键字 '{keyword}' 的仓库")
+NOT_FOUND_ERROR = "not found from github"
+FILE_TYPE_ERROR = "file type error"
+RESOURCE_TYPE_ERROR = "resource type error"
 
+headers = {"Authorization": f"token {os.getenv("GITHUB_TOKEN")}"}
 
-# 使用函数搜索特定的关键字
-# print(search_github("huaweicloud"))
+# def get_github_content(file_path: str) -> str | list | None:
+#     repo_url = "https://api.github.com/repos/{username}/{repo_name}/contents/{file_path}"
+#     repo_url = repo_url.replace('{username}', 'huaweicloud')
+#     repo_url = repo_url.replace('{repo_name}', 'terraform-provider-huaweicloud')
+#     repo_url = repo_url.replace('{file_path}', file_path)
+#     response = requests.get(repo_url, headers=headers)
+#     if response.status_code == 200:
+#         repo_res = response.json()
+#         # 说明是具体的文件，返回的是文件内容
+#         if isinstance(repo_res, dict):
+#             repo_content = repo_res["content"]
+#             decoded_text = base64.b64decode(repo_content).decode('utf-8')
+#             return decoded_text
+#         # 说明是文件夹，返回的是文件列表
+#         elif isinstance(repo_res, list):
+#             return repo_res
+#         return "file type error"
+#     elif response.status_code == 404:
+#         return NOT_FOUND_ERROR
+#     else:
+#         raise Exception(f"Failed to fetch data. Status code: {response.status_code}")
+#
+# def get_json_file(resource_type: str, file_name:str) -> str:
+#     file_path = "docs/json/{resource_type}/{file_name}.json"
+#     if resource_type == "data_source":
+#         file_path = file_path.replace("{resource_type}", "data-sources")
+#         file_path = file_path.replace("{file_name}", file_name)
+#     elif resource_type == "resource":
+#         file_path = file_path.replace("{resource_type}", "resources")
+#         file_path = file_path.replace("{file_name}", file_name)
+#     else:
+#         return RESOURCE_TYPE_ERROR
+#
+#     # 从docs/json 中查找文件是否存在，如果存在，说明发布的版本已经支持，如果不存在，说明发布的版本还未支持
+#     file_content = get_github_content(file_path)
+#     if file_content == NOT_FOUND_ERROR:
+#         return NOT_FOUND_ERROR
+#
+#     return get_github_content(file_path)
+#
+# def get_docs_file(resource_type: str, file_name:str) -> str:
+#     file_path = "docs/{resource_type}/{file_name}.md"
+#     if resource_type == "data_source":
+#         file_path = file_path.replace("{resource_type}", "data-sources")
+#         file_path = file_path.replace("{file_name}", file_name)
+#     elif resource_type == "resource":
+#         file_path = file_path.replace("{resource_type}", "resources")
+#         file_path = file_path.replace("{file_name}", file_name)
+#     else:
+#         return RESOURCE_TYPE_ERROR
+#
+#     # 从 docs/data-sources、docs/resources 中查找文件内容
+#     file_content = get_github_content(file_path)
+#     if file_content == NOT_FOUND_ERROR:
+#         return ""
+#
+#     return file_content
+#
+# @tool
+# def get_latest_released_file_content(resource_type: str, resource_name:str) -> str:
+#     """
+#     used to get the resource info from latest released version
+#     triggered when the resource info from latest released version
+#
+#     :param resource_type:
+#     :param resource_name:
+#     :return:
+#     """
+#     if not resource_name.startswith('huaweicloud_'):
+#         return "file name error, should start with `huaweicloud_`"
+#
+#     file_name = resource_name.replace('huaweicloud_', '')
+#
+#     # 从docs/json 中查找文件是否存在，如果存在，说明发布的版本已经支持，如果不存在，说明发布的版本还未支持
+#     file_content = get_json_file(resource_type, file_name)
+#     if file_content == NOT_FOUND_ERROR:
+#         return NOT_FOUND_ERROR
+#
+#     # 从 docs/data-sources、docs/resources 中查找文件内容
+#     file_content = get_docs_file(resource_type, file_name)
+#     return file_content
+#
+# @tool
+# def get_committed_but_not_released_file_content(resource_type: str, resource_name:str) -> str:
+#     """
+#     used to get the resource info from the repo that has been committed but not yet released,
+#     triggered when get the resource info from the repo that has been committed but not yet released
+#
+#     :param resource_type: the type of resource
+#     :param resource_name: the name of the resource
+#     :return: the docs of the resource which is committed but not yet released
+#     """
+#     if not resource_name.startswith('huaweicloud_'):
+#         return "file name error, should start with `huaweicloud_`"
+#
+#     file_name = resource_name.replace('huaweicloud_', '')
+#
+#     # 从 docs/data-sources、docs/resources 中查找文件内容
+#     file_content = get_docs_file(resource_type, file_name)
+#     return file_content
 
+# @tool
+# def get_latest_provider_version()->str:
+#     """
+#     used to get huaweicloud terraform provider latest version
+#     triggered only when get huaweicloud terraform provider latest version
+#     :return:
+#     """
+#     repo_url = "https://api.github.com/repos/{username}/{repo_name}/releases/latest"
+#     repo_url = repo_url.replace('{username}', 'huaweicloud')
+#     repo_url = repo_url.replace('{repo_name}', 'terraform-provider-huaweicloud')
+#     response = requests.get(repo_url, headers=headers)
+#     if response.status_code == 200:
+#         repo_res = response.json()
+#         latest_tag = repo_res["tag_name"]
+#         return latest_tag
+#     elif response.status_code == 404:
+#         return NOT_FOUND_ERROR
+#     else:
+#         raise Exception(f"Failed to fetch data. Status code: {response.status_code}")
 
-def search_keyword_in_github(repo_url, keyword):
-    # 请求GitHub仓库的HTML内容
-    response = requests.get(repo_url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
+@tool
+def get_latest_provider_version()->str:
+    """
+    used to get the latest huaweicloud terraform provider latest version
+    triggered only when get the latest huaweicloud terraform provider latest version
+    :return:
+    """
+    version = get_latest_version()
+    return version
 
-        # 查找所有文本内容，这里可以根据需要调整选择器
-        texts = soup.find_all(string=True)
-        for text in texts:
-            if keyword.lower() in text.lower():
-                print(text.title())
-                # print(f"Found keyword '{keyword}' in text: {text.title()}")
-                return True
-    else:
-        print(f"Failed to retrieve the page. Status code: {response.status_code}")
-    return False
+@tool
+def pull_latest_provider_code():
+    """
+    used to pull the latest huaweicloud terraform code from github
+    triggered only when pull the latest huaweicloud terraform code from github
+    :return:
+    """
+    pull_code()
 
+@tool
+def checkout_branch(version: str) -> str | None:
+    """
+    used to check out the branch to the given version
+    triggered only when check out the branch to the given version
+    :return:
+    """
+    if not version:
+        return f" version is required"
+    checkout_code(version)
+    return None
 
-# 使用示例
-repo_url = 'https://github.com/huaweicloud/terraform-provider-huaweicloud/blob/master/docs/api/'  # 替换为实际的仓库URL
-keyword = '/v2/{project_id}/instances/{instance_id}/backups'  # 你要搜索的关键字
-search_keyword_in_github(repo_url, keyword)
+# @tool
+def search_resource_from_code(resource_type: str,resource_name: str, service_name: str) -> bool | str:
+    """
+    used to search the resource name by resource_name and service_name
+    triggered only when search the resource name by resource_name and service_name
+    :return:
+    """
+    if not resource_type or not resource_name or not service_name:
+        return f"resource_name, service_name are all required"
+
+    return search_resource_by_name(resource_type, service_name, resource_name)
+
+@tool
+def search_resource_by_api(api_method: str, api_url: str, service_name: str) -> str | list[str]:
+    """
+    used to search the resource name by api_method, api_url and service_name
+    triggered only when search the resource name by api method, api_url and service_name
+    :return:
+    """
+    if not api_method or not api_url or not service_name:
+        return f"api_method, api_url and service_name are all required"
+
+    return search_resource_by_key_word(f"{api_method} {api_url}", f"huaweicloud/services/{service_name}")
+
+if "__main__" == __name__:
+    search_resource_from_code("data_source", "huaweicloud_taurusdb_audit_logs_download_links", "taurusdb")

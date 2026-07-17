@@ -42,6 +42,7 @@ class LoggingMiddleware(AgentMiddleware):
     @override
     def before_agent(self, state: AssistantAgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         logger.info(" agent {%s} begin execute ", self._agent_name)
+        logger.info(" state messages: %s ", state.get("messages"))
         return None
 
     @override

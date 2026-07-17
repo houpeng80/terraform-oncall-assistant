@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from copy import copy
 from typing import Any
 
 _UPLOAD_BLOCK_RE = re.compile(r"<uploaded_files>[\s\S]*?</uploaded_files>\n*", re.IGNORECASE)
@@ -54,19 +53,18 @@ def extract_message_text(message: Any) -> str:
 
 def filter_messages_for_memory(messages: list[Any]) -> list[Any]:
     """Keep only user inputs and final assistant responses for memory updates."""
-    filteredHumanMsg = []
-    filteredAiMsg = []
+    filtered = []
     for msg in messages:
         msg_type = getattr(msg, "type", None)
 
         if msg_type == "human":
-            filteredHumanMsg.append(msg)
+            filtered.append(msg)
         elif msg_type == "ai":
             tool_calls = getattr(msg, "tool_calls", None)
             if not tool_calls:
-                filteredAiMsg.append(msg)
+                filtered.append(msg)
 
-    return [filteredHumanMsg, filteredAiMsg]
+    return filtered
 
 
 def detect_correction(messages: list[Any]) -> bool:

@@ -1,15 +1,16 @@
 import os
 from dotenv import load_dotenv
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from langchain_deepseek import ChatDeepSeek
+from pydantic import BaseModel
 
 from assistant.config.config import get_app_config
 
 load_dotenv(encoding="utf-8")
 
-def create_model(model_type: str) -> BaseChatOpenAI:
+def create_model(model_type: str) -> BaseChatOpenAI | BaseModel:
     config = get_app_config()
     common_params = {
         "temperature": config.temperature,
@@ -59,11 +60,13 @@ def create_model(model_type: str) -> BaseChatOpenAI:
         )
     # Qwen
     elif model_type == "qwen_embedding":
-        return ChatOpenAI(
+        return OpenAIEmbeddings(
             model=os.getenv("QWEN_MODEL"),
             api_key=os.getenv("QWEN_API_KEY"),
             base_url=os.getenv("QWEN_BASE_URL"),
-            **common_params
+            check_embedding_ctx_length=False,
+            dimensions=1024,
+            chunk_size = 10
         )
     # doubao
     elif model_type == "doubao":
@@ -78,7 +81,7 @@ def create_model(model_type: str) -> BaseChatOpenAI:
 
 model_cache: dict[str, BaseChatOpenAI] = {}
 
-def get_model(model_type = get_app_config().model_type) -> BaseChatOpenAI:
+def get_model(model_type = get_app_config().model_type) -> BaseChatOpenAI | BaseModel:
     global model_cache
 
     if hasattr(model_cache, model_type):
