@@ -1,7 +1,5 @@
-import base64
 import os
 
-import requests
 from dotenv import load_dotenv
 
 from langchain_core.tools import tool
@@ -169,7 +167,7 @@ def checkout_branch(version: str) -> str | None:
     checkout_code(version)
     return None
 
-# @tool
+@tool
 def search_resource_from_code(resource_type: str,resource_name: str, service_name: str) -> bool | str:
     """
     used to search the resource name by resource_name and service_name

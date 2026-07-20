@@ -38,7 +38,7 @@ def create_model(model_type: str) -> BaseChatOpenAI | BaseModel:
             **common_params
         )
     # Deepseek
-    elif config.model_type == "deepseek":
+    elif model_type == "deepseek":
         return ChatDeepSeek(
             model=os.getenv("DEEPSEEK_MODEL"),
             api_key=os.getenv("DEEPSEEK_API_KEY"),
@@ -79,7 +79,7 @@ def create_model(model_type: str) -> BaseChatOpenAI | BaseModel:
     else:
         raise ValueError(f"not supported model type：{config.model_type}")
 
-model_cache: dict[str, BaseChatOpenAI] = {}
+model_cache: dict[str, BaseChatOpenAI | BaseModel] = {}
 
 def get_model(model_type = get_app_config().model_type) -> BaseChatOpenAI | BaseModel:
     global model_cache

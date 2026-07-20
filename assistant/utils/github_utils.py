@@ -28,7 +28,7 @@ def run_git_cmd(args: list[str], cwd: str = None) -> tuple[int, str, str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        creationflags=subprocess.CREATE_NO_WINDOW
+        # creationflags=subprocess.CREATE_NO_WINDOW
     )
     out, err = proc.communicate()
     return proc.returncode, out, err

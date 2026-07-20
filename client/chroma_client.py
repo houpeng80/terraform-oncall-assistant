@@ -20,29 +20,25 @@ def similarity_search_from_chromadb(client: Chroma, query:str, query_size: int) 
     search_res = sorted(search_res, key=lambda x: x[1], reverse=True)
     return search_res
 
-
-def add_doc_to_es():
-    pass
-
-
 if __name__ == '__main__':
 
-    docs = load_documents("rds")
-    print(docs[:5])
+    # docs = load_documents("rds")
+    # print(docs[:5])
 
 
 
-    # embedding_model = get_model("qwen_embedding")
-    # client = get_chroma_client(embedding_model)
+    embedding_model = get_model("qwen_embedding")
+    client = get_chroma_client(embedding_model)
 
     # add_doc_to_chromadb(client)
     #
     # add_doc_to_es()
 
-    # query = "Use this data source to get the list of DCS accounts."
-    # res = similarity_search_from_chromadb(client, query, 20)
-    # for doc in res:
-    #     print("===========================")
-    #     # print(doc)
-    #     print(f"res={doc[0]}")
-    #     print(f"score={doc[1]}")
+    query = "manager DLI Flink template"
+    res = similarity_search_from_chromadb(client, query, 10)
+    for doc in res:
+        print("===========================")
+        # print(doc)
+        print(f"res={doc[0]}")
+        print(f"id={doc[0].id}")
+        print(f"score={doc[1]}")

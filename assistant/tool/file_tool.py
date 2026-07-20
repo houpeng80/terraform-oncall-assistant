@@ -23,6 +23,12 @@ def read_md(resource_type: str, resource_name:str) -> str:
     else:
         return "resource type error"
 
-    with open(TERRAFORM_CODE_PATH / file_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    try:
+        with open(TERRAFORM_CODE_PATH / file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except FileNotFoundError:
+        return f"error：file {file_path} not exist"
+    except Exception as e:
+        return f"error: read file {file_path} error: {e}"
+
     return content

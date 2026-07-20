@@ -17,7 +17,7 @@ from assistant.middleware.token_usage_middleware import TokenUsageMiddleware
 from assistant.model.factory import get_model
 from assistant.react.agent_state import AssistantAgentState
 from assistant.react.prompt import apply_prompt_template
-from assistant.tool import oncall_schedule, reference_docs
+from assistant.tool import oncall_schedule, reference_docs, rag_search_tool
 from assistant.tool.clarification_tool import ask_clarification_tool
 from assistant.tool.file_tool import read_md
 from assistant.tool.github_tool import get_latest_provider_version, checkout_branch, search_resource_from_code, \
@@ -47,8 +47,8 @@ class LeaderAgent:
         self.config = config
         self.check_pointer = InMemorySaver()
         self.agent = self.create_assistant_agent()
-        init_local_code()
-        start_scheduler_sync_git_code()
+        # init_local_code()
+        # start_scheduler_sync_git_code()
 
     def __del__(self):
         stop_scheduler_sync_git_code()
@@ -138,6 +138,7 @@ class LeaderAgent:
             checkout_branch,
             search_resource_from_code,
             search_resource_by_api,
+            rag_search_tool,
             read_md,
         ]
         return tools

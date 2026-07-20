@@ -1,9 +1,13 @@
+import warnings
 from datetime import datetime
-from elasticsearch import Elasticsearch, helpers
+
+from elasticsearch import Elasticsearch, helpers, ElasticsearchWarning
 from langchain_core.documents import Document
 
 ES_INDEX = "rag_chunk_index"
 ES_ADDRESS = "http://localhost:9200"
+
+warnings.filterwarnings("ignore", category=ElasticsearchWarning)
 
 def create_es_client(address:str=ES_ADDRESS) -> Elasticsearch:
     return Elasticsearch(
@@ -18,8 +22,8 @@ def create_index(client: Elasticsearch):
 
     index_mapping = {
         "settings": {
-            "number_of_shards": 2,
-            "number_of_replicas": 1,
+            "number_of_shards": 1,
+            "number_of_replicas": 0,
             "analysis": {
                 "analyzer": {
                     "ik_cn": {
@@ -90,7 +94,7 @@ def bulk_insert_es(client: Elasticsearch, documents: list[tuple[str, Document]])
         )
         print(f"ES批量写入完成：成功{success}条，失败{fail}条")
 
-def es_keyword_search(client: Elasticsearch, query: str, top_k: int = 4):
+def es_keyword_search(client: Elasticsearch, query: str, top_k: int = 10) -> list[tuple[Document, float]]:
     """ES全文关键词检索，返回chunk_id、content、得分"""
     dsl = {
         "size": top_k,
@@ -98,17 +102,17 @@ def es_keyword_search(client: Elasticsearch, query: str, top_k: int = 4):
             "multi_match": {
                 "query": query,
                 "fields": ["title^2", "content"],
-                "analyzer": "ik_smart_analyzer"
+                "analyzer": "ik_smart"
             }
         }
     }
     resp = client.search(index=ES_INDEX, body=dsl)
-    result_list = []
+    result_list : list[tuple[Document, float]] = []
     for hit in resp["hits"]["hits"]:
         src = hit["_source"]
-        result_list.append({
-            "chunk_id": src["chunk_id"],
-            "content": src["content"],
-            "score": hit["_score"]
-        })
+        doc = Document(
+            id=src["chunk_id"],
+            page_content = src["content"]
+        )
+        result_list.append((doc, hit["_score"]))
     return result_list
