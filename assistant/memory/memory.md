@@ -1,28 +1,3 @@
-# Mem0的记忆管理接口, 导包： pip install mem0ai
-
-    Mem0 的核心机制是：每次写入新记忆前，先用 LLM 比较新信息和现有记忆的语义关系，然后决定做哪种操作。
-    
-    MEMORY_DECISION_PROMPT = """ 
-    你是一个记忆管理助手。请判断以下新信息与现有记忆的关系，并决定操作类型。  
-    新信息：{new_info}  
-    现有记忆（相关度最高的5条）： {existing_memories}  
-    请判断： 
-        - ADD：新信息是全新的，现有记忆中没有相关内容 
-        - UPDATE：新信息是对某条现有记忆的更新（同一实体，信息变化了） 
-        - DELETE：新信息表明某条现有记忆已经失效 
-        - NOOP：新信息与现有记忆完全一致，无需操作  
-    输出JSON格式：{{"action": "ADD/UPDATE/DELETE/NOOP", "target_memory_id": "如果是UPDATE/DELETE则填写目标记忆ID", "reason": "判断理由"}} """
-
-    e.g:
-    system_msg = SystemMessage(content=(
-        "你是由 DeepSeek 驱动的智能助手。具备长期记忆能力。\n"
-        f"【用户历史记忆】:\n{mem_context}\n\n"
-        "请根据记忆和上下文回答用户。如果需要，请使用工具。\n"
-        "注意回复不要提到根据我们的对话历史记录和根据我的记忆类似的话语。\n"
-        "严格限制：注意直接回复，不要回复根据我们的对话历史记录和根据我的记忆类似的话语。\n"
-    ))
-
-
 # 记忆系统设计：
 
 ## prompt

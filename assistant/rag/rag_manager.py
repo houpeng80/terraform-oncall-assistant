@@ -3,6 +3,7 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
+from assistant.config.config import get_app_config
 from client.chroma_client import similarity_search_from_chromadb
 
 from assistant.model import get_model
@@ -16,19 +17,9 @@ MODEL_PATH = Path(__file__).parents[2] / "models/AI-ModelScope--bge-reranker-v2-
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-_cross_encoder: CrossEncoder | None = None
-
-def get_app_config() -> CrossEncoder:
-    """Get the Code generate agent config instance."""
-    global _cross_encoder
-
-    if _cross_encoder is not None:
-        return _cross_encoder
-
-
-    _cross_encoder = CrossEncoder(MODEL_PATH, device="cpu", local_files_only=True)
-
-    return _cross_encoder
+def get_cross_encoder() -> CrossEncoder:
+    cross_encoder = CrossEncoder(MODEL_PATH, device="cpu", local_files_only=True)
+    return cross_encoder
 
 def reciprocal_rank_fusion_with_docs(results: list[tuple[Document, float]], k=60):
     """
@@ -56,15 +47,18 @@ def rerank(model: CrossEncoder, query: str, documents: list[Document], top_k=5):
         pairs.append((query, doc.page_content))
 
     # 模型预测相关性分析
-    scores = model.predict(pairs, show_progress_bar=False)
+    try:
+        scores = model.predict(pairs, show_progress_bar=False)
+    finally:
+        del model
 
     # 将文档和分数组合，并按分数从高到低排序
     scored_docs = sorted(zip(documents, scores), key=lambda x: x[1], reverse=True)
 
     # 返回分数最高的 top_k 个文档
-    return [doc for doc, score in scored_docs[:top_k]]
+    return [doc for doc, score in scored_docs[:top_k] if score >= get_app_config().rerank_score_min]
 
-def rag_keyword_search(query: str,) -> list[str]:
+def rag_keyword_search(query: str, top_k: int=5) -> list[str]:
     embedding_model = get_model("qwen_embedding")
     chroma_client = get_chroma_client(embedding_model)
     es_client = create_es_client()
@@ -75,36 +69,6 @@ def rag_keyword_search(query: str,) -> list[str]:
     merged = reciprocal_rank_fusion_with_docs(chroma_res + es_res)
     merged_res = [merge["doc"][0] for merge in merged]
 
-    rerank_results = rerank(get_app_config(), query, merged_res)
+    rerank_results = rerank(get_cross_encoder(), query, merged_res, top_k=top_k)
     res = [rerank_result.page_content for rerank_result in rerank_results]
     return res
-
-if "__main__" == __name__:
-    # embedding_model = get_model("qwen_embedding")
-    # chroma_client = get_chroma_client(embedding_model)
-    # es_client = create_es_client()
-
-    query = "manager Gaussdb account resource"
-
-    rerank_res = rag_keyword_search(query)
-    for rr in rerank_res:
-        print("==============")
-        print(rr)
-
-    # chroma_res = similarity_search_from_chromadb(chroma_client, query, 30)
-    #
-    # es_res = es_keyword_search(es_client, query, 30)
-    #
-    # merged = reciprocal_rank_fusion_with_docs(chroma_res + es_res)
-    # for merge in merged:
-    #     print("==============")
-    #     print(merge)
-    #     print("==============")
-    #
-    # merged_res = [merge["doc"][0] for merge in merged]
-    #
-    # rerank_model = create_cross_encoder_client()
-    # rerank_res = rerank(rerank_model, query, merged_res)
-    # for rerank in rerank_res:
-    #     print("==============")
-    #     print(rerank)

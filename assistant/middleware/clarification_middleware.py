@@ -1,5 +1,3 @@
-"""Middleware for intercepting clarification requests and presenting them to the user."""
-
 import json
 import logging
 from collections.abc import Callable
@@ -22,17 +20,6 @@ class ClarificationMiddlewareState(AgentState):
 
 
 class ClarificationMiddleware(AgentMiddleware[ClarificationMiddlewareState]):
-    """Intercepts clarification tool calls and interrupts execution to present questions to the user.
-
-    When the model calls the `ask_clarification` tool, this middleware:
-    1. Intercepts the tool call before execution
-    2. Extracts the clarification question and metadata
-    3. Formats a user-friendly message
-    4. Returns a Command that interrupts execution and presents the question
-    5. Waits for user response before continuing
-
-    This replaces the tool-based approach where clarification continued the conversation flow.
-    """
 
     state_schema = ClarificationMiddlewareState
 
@@ -46,17 +33,6 @@ class ClarificationMiddleware(AgentMiddleware[ClarificationMiddlewareState]):
             return f"clarification:{tool_call_id}"
         digest = sha256(formatted_message.encode("utf-8")).hexdigest()[:16]
         return f"clarification:{digest}"
-
-    def _is_chinese(self, text: str) -> bool:
-        """Check if text contains Chinese characters.
-
-        Args:
-            text: Text to check
-
-        Returns:
-            True if text contains Chinese characters
-        """
-        return any("\u4e00" <= char <= "\u9fff" for char in text)
 
     def _format_clarification_message(self, args: dict) -> str:
         """Format the clarification arguments into a user-friendly message.
@@ -90,9 +66,6 @@ class ClarificationMiddleware(AgentMiddleware[ClarificationMiddlewareState]):
         type_icons = {
             "missing_info": "❓",
             "ambiguous_requirement": "🤔",
-            "approach_choice": "🔀",
-            "risk_confirmation": "⚠️",
-            "suggestion": "💡",
         }
 
         icon = type_icons.get(clarification_type, "❓")
@@ -147,9 +120,6 @@ class ClarificationMiddleware(AgentMiddleware[ClarificationMiddlewareState]):
             tool_call_id=tool_call_id,
             name="ask_clarification",
         )
-
-        answer = interrupt(formatted_message)
-        print(f"> Received an input from the interrupt: {answer}")
 
         # Return a Command that:
         # 1. Adds the formatted tool message

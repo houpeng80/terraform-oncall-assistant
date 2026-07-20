@@ -1,11 +1,11 @@
 from elasticsearch import Elasticsearch
 
 from assistant.rag.doc_manager import load_documents
-from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search
+from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search, ES_INDEX, create_index
 
 
 def add_doc_to_es(client: Elasticsearch):
-    # "gaussdb", "rds", "dds", "compute", "geminidb", "taurusdb", "elb", "dcs", "ddm", "elb", "vpc", "cce", "dns", "dms_kafka", "dms_rocketmq", "dms_rabbitmq" "vpn"
+    # "gaussdb", "rds", "dds", "compute", "geminidb", "taurusdb", "elb", "dcs", "ddm", "elb", "vpc", "cce", "dns", "dms_kafka", "dms_rocketmq", "dms_rabbitmq", "vpn"
     services = ["dms_rabbitmq", "vpn"]
     for service in services:
         add_docs = load_documents(service)
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # add_doc_to_es(es_client)
 
-    query = "manager DLI Flink template"
+    query = "Use this data source to get the ESW instance quotas."
     final_res = es_keyword_search(es_client, query, top_k=10)
     for res in final_res:
         print("===========")

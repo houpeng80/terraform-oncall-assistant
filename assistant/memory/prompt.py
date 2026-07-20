@@ -43,22 +43,22 @@ Before extracting facts, perform a structured reflection on the conversation:
 Memory Section Guidelines:
 
 **User Context** (Current state - concise summaries):
-- workContext: Professional role, company, key projects, main technologies (2-3 sentences)
-  Example: Core contributor, project names with metrics (16k+ stars), technical stack
+- workContext: Professional role, department, key projects, main technologies (2-3 sentences)
+  Example: Resource type, service name, but do not contain special resource info, such as resource name and API info
 - personalContext: Languages, communication preferences, key interests (1-2 sentences)
   Example: Bilingual capabilities, specific interest areas, expertise domains
 - topOfMind: Multiple ongoing focus areas and priorities (3-5 sentences, detailed paragraph)
   Example: Primary project work, parallel technical investigations, ongoing learning/tracking
-  Include: Active implementation work, troubleshooting issues, market/research interests
+  Include: Interest service, interest resource, and 
   Note: This captures SEVERAL concurrent focus areas, not just one task
 
 **History** (Temporal context - rich paragraphs):
-- recentMonths: Detailed summary of recent activities (4-6 sentences or 1-2 paragraphs)
-  Timeline: Last 1-3 months of interactions
-  Include: Technologies explored, projects worked on, problems solved, interests demonstrated
+- recentHours: Detailed summary of recent activities (4-6 sentences or 1-2 paragraphs)
+  Timeline: Last 1-6 hours of interactions
+  Include: Service consult, resource consult, problems solved, interests demonstrated
 - earlierContext: Important historical patterns (3-5 sentences or 1 paragraph)
-  Timeline: 3-12 months ago
-  Include: Past projects, learning journeys, established patterns
+  Timeline: 6-24 hours ago
+  Include: Past service and resource, learning journeys, established patterns
 - longTermBackground: Persistent background and foundational context (2-4 sentences)
   Timeline: Overall/foundational information
   Include: Core expertise, longstanding interests, fundamental working style
@@ -84,7 +84,7 @@ Memory Section Guidelines:
 - personalContext: Languages, personality, interests outside direct work tasks
 - topOfMind: Multiple ongoing priorities and focus areas user cares about recently (gets updated most frequently)
   Should capture 3-5 concurrent themes: main work, side explorations, learning/tracking interests
-- recentMonths: Detailed account of recent technical explorations and work
+- recentHours: Detailed account of recent technical explorations and work
 - earlierContext: Patterns from slightly older interactions still relevant
 - longTermBackground: Unchanging foundational facts about the user
 
@@ -101,7 +101,7 @@ Output Format (JSON):
     "topOfMind": {{ "summary": "...", "shouldUpdate": true/false }}
   }},
   "history": {{
-    "recentMonths": {{ "summary": "...", "shouldUpdate": true/false }},
+    "recentHours": {{ "summary": "...", "shouldUpdate": true/false }},
     "earlierContext": {{ "summary": "...", "shouldUpdate": true/false }},
     "longTermBackground": {{ "summary": "...", "shouldUpdate": true/false }}
   }},
@@ -129,36 +129,6 @@ Important Rules:
   Recording upload events causes confusion in subsequent conversations.
 
 Return ONLY valid JSON, no explanation or markdown."""
-
-
-# Prompt template for extracting facts from a single message
-FACT_EXTRACTION_PROMPT = """Extract factual information about the user from this message.
-
-Message:
-{message}
-
-Extract facts in this JSON format:
-{{
-  "facts": [
-    {{ "content": "...", "category": "preference|knowledge|context|behavior|goal|correction", "confidence": 0.0-1.0 }}
-  ]
-}}
-
-Categories:
-- preference: User preferences (likes/dislikes, styles, tools)
-- knowledge: User's expertise or knowledge areas
-- context: Background context (location, job, projects)
-- behavior: Behavioral patterns
-- goal: User's goals or objectives
-- correction: Explicit corrections or mistakes to avoid repeating
-
-Rules:
-- Only extract clear, specific facts
-- Confidence should reflect certainty (explicit statement = 0.9+, implied = 0.6-0.8)
-- Skip vague or temporary information
-
-Return ONLY valid JSON."""
-
 
 def _count_tokens(text: str, encoding_name: str = "cl100k_base") -> int:
     """Count tokens in text using tiktoken.
@@ -238,7 +208,7 @@ def format_memory_for_injection(memory_data: dict[str, Any], max_tokens: int = 2
     if history_data:
         history_sections = []
 
-        recent = history_data.get("recentMonths", {})
+        recent = history_data.get("recentHours", {})
         if recent.get("summary"):
             history_sections.append(f"Recent: {recent['summary']}")
 

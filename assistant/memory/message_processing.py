@@ -33,6 +33,7 @@ _REINFORCEMENT_PATTERNS = (
     re.compile(r"(?:对[，,]?\s*)?就是这个意思(?:[。！？!?.]|$)"),
     re.compile(r"正是我想要的(?:[。！？!?.]|$)"),
     re.compile(r"继续保持(?:[。！？!?.]|$)"),
+    re.compile(r"没问题(?:[。！？!?.]|$)"),
 )
 
 def extract_message_text(message: Any) -> str:

@@ -195,37 +195,6 @@ class MemoryUpdateQueue:
             with self._lock:
                 self._processing = False
 
-    def flush(self) -> None:
-        """Force immediate processing of the queue.
-
-        This is useful for testing or graceful shutdown.
-        """
-        with self._lock:
-            if self._timer is not None:
-                self._timer.cancel()
-                self._timer = None
-
-        self._process_queue()
-
-    def flush_nowait(self) -> None:
-        """Start queue processing immediately in a background thread."""
-        with self._lock:
-            # Daemon thread: queued messages may be lost if the process exits
-            # before _process_queue completes. Acceptable for best-effort memory updates.
-            self._schedule_timer(0)
-
-    def clear(self) -> None:
-        """Clear the queue without processing.
-
-        This is useful for testing.
-        """
-        with self._lock:
-            if self._timer is not None:
-                self._timer.cancel()
-                self._timer = None
-            self._queue.clear()
-            self._processing = False
-
 # Global singleton instance
 _memory_queue: MemoryUpdateQueue | None = None
 _queue_lock = threading.Lock()
@@ -243,13 +212,3 @@ def get_memory_queue() -> MemoryUpdateQueue:
         return _memory_queue
 
 
-def reset_memory_queue() -> None:
-    """Reset the global memory queue.
-
-    This is useful for testing.
-    """
-    global _memory_queue
-    with _queue_lock:
-        if _memory_queue is not None:
-            _memory_queue.clear()
-        _memory_queue = None

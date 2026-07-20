@@ -14,6 +14,13 @@ resource_path = {
     "resource": "docs/resources",
 }
 
+def get_markdown_file_description(folder: str, file_name: str) -> str:
+    with open(TERRAFORM_CODE_PATH / folder / file_name, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    res = content.split("---")[-1].split("##")[0].strip()
+    return res
+
 def split_markdown_file(folder: str, file_name: str, resource_type: str) -> list[tuple[str, Document]]:
     with open(TERRAFORM_CODE_PATH / folder / file_name, "r", encoding="utf-8") as f:
         content = f.read()

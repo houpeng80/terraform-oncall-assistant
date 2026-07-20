@@ -13,4 +13,4 @@ def rag_search_tool(resource_type: str, content: str) -> list[str]:
     if resource_type == "data_source":
         query = f"Use this data source to get {content}"
 
-    return rag_keyword_search(query)
+    return rag_keyword_search(query, top_k=3)

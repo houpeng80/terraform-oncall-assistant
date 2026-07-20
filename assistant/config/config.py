@@ -38,7 +38,7 @@ class AgentConfig(BaseModel):
         description="Maximum tokens to use for memory injection",
     )
     model_cycle_max: int = Field(default=10,description="Maximum model cycle for one request")
-
+    rerank_score_min: float = Field(default=0.8, ge=0, le=1, description="Minimum score for rerank score")
 
     @classmethod
     def resolve_config_path(cls, config_path: str | None = None) -> Path:

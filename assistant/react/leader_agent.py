@@ -2,8 +2,8 @@ import logging
 from typing import Any
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware
-from langchain_core.messages import HumanMessage, AIMessageChunk
+from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware, HumanInTheLoopMiddleware
+from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -85,6 +85,8 @@ class LeaderAgent:
                                 logger.info("[tool return]: result=%s", update['messages'][-1].content)
                     elif chunk["type"] == "messages" and chunk["data"] is not None and len(chunk["data"]) > 0:
                         if isinstance(chunk["data"][0], AIMessageChunk) and chunk["data"][0].content is not None:
+                            print(chunk["data"][0].content, end="", flush=True)
+                        if isinstance(chunk["data"][0], ToolMessage) and chunk["data"][0].name == "ask_clarification" and chunk["data"][0].content is not None:
                             print(chunk["data"][0].content, end="", flush=True)
 
         except Exception as e:
