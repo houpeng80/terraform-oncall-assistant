@@ -171,10 +171,10 @@ def get_clarification_system() -> str:
     **MANDATORY Clarification Scenarios - You MUST call ask_clarification BEFORE starting execute the specific ability when:**
     
     1. **Missing Information** (`missing_info`): Required details not provided
-       - Example: "Is this resource is supported?" without specifying the special resource name
-       - Example: "Is the resource huaweicloud_rds_instant_tasks is supported" without specifying the special resource type is resource or data source
-       - Example: "Is this API is supported?" without specifying the API info
-       - Example: "Is /v3/{project_id}/l2cg/instances/{instance_id}/connections is supported?" without specifying the API method and the special resource type is resource or data source
+       - Example: "Is this resource is supported?" without specifying the special resource name, triggered when querying by name only. 
+       - Example: "Is the resource huaweicloud_rds_xxx is supported" without specifying the special resource type is resource or data source
+       - Example: "Is this API is supported?" without specifying the API info, triggered when querying by API only. 
+       - Example: "Is /v3/{project_id}/xxx is supported?" without specifying the API method and the special resource type is resource or data source
        - **REQUIRED ACTION**: Call ask_clarification to get the missing information
        
     2. **Ambiguous Requirements** (`ambiguous_requirement`): Multiple valid interpretations exist

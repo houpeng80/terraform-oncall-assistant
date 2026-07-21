@@ -1,4 +1,6 @@
 import os
+
+import httpx
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -56,14 +58,24 @@ def create_model(model_type: str) -> BaseChatOpenAI | BaseModel:
             model=os.getenv("GLM_MODEL"),
             api_key=os.getenv("GLM_API_KEY"),
             base_url=os.getenv("GLM_BASE_URL"),
+            http_client=httpx.Client(verify=False),
             **common_params
         )
     # Qwen
-    elif model_type == "qwen_embedding":
+    elif model_type == "qwen":
         return OpenAIEmbeddings(
             model=os.getenv("QWEN_MODEL"),
             api_key=os.getenv("QWEN_API_KEY"),
             base_url=os.getenv("QWEN_BASE_URL"),
+            http_client=httpx.Client(verify=False),
+            **common_params
+        )
+    # Qwen embedding
+    elif model_type == "qwen_embedding":
+        return OpenAIEmbeddings(
+            model=os.getenv("QWEN_EMBEDDING_MODEL"),
+            api_key=os.getenv("QWEN_EMBEDDING_API_KEY"),
+            base_url=os.getenv("QWEN_EMBEDDING_BASE_URL"),
             check_embedding_ctx_length=False,
             dimensions=1024,
             chunk_size = 10
