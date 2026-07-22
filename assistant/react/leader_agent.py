@@ -8,6 +8,7 @@ from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from assistant.config.config import get_app_config
+from assistant.memory.queue import get_memory_queue
 from assistant.middleware.clarification_middleware import ClarificationMiddleware
 from assistant.middleware.cycle_check_middleware import CycleCheckMiddleware
 from assistant.middleware.dynamic_system_porompt_middleware import build_system_prompt_template
@@ -57,6 +58,8 @@ class LeaderAgent:
         while True:
             user_input = input("\nUser: ")
             if user_input.lower() in ["q", "quit"]:
+                # save thc cache queue to memory
+                get_memory_queue().flush()
                 break
 
             self.react(user_input)

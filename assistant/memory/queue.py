@@ -98,6 +98,9 @@ class MemoryUpdateQueue:
 
         logger.info("Memory update queued for immediate processing on thread %s, queue size: %d", thread_id, len(self._queue))
 
+    def flush(self):
+        self._process_queue()
+
     def _enqueue_locked(
         self,
         *,
