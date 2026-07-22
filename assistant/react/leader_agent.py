@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware, HumanInTheLoopMiddleware
+from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware
 from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
@@ -10,13 +10,13 @@ from langgraph.checkpoint.memory import InMemorySaver
 from assistant.config.config import get_app_config
 from assistant.middleware.clarification_middleware import ClarificationMiddleware
 from assistant.middleware.cycle_check_middleware import CycleCheckMiddleware
+from assistant.middleware.dynamic_system_porompt_middleware import build_system_prompt_template
 from assistant.middleware.log_middleware import LoggingMiddleware
 from assistant.middleware.memory_middleware import MemoryMiddleware
 from assistant.middleware.summarization_middleware import ContextSummarizationMiddleware
 from assistant.middleware.token_usage_middleware import TokenUsageMiddleware
 from assistant.model.factory import get_model
 from assistant.react.agent_state import AssistantAgentState
-from assistant.react.prompt import apply_prompt_template
 from assistant.tool import oncall_schedule, reference_docs, rag_search_tool
 from assistant.tool.clarification_tool import ask_clarification_tool
 from assistant.tool.file_tool import read_md
@@ -100,15 +100,15 @@ class LeaderAgent:
             name=AGENT_NAME,
             model=self.model,
             checkpointer=self.check_pointer,
-            system_prompt=self.build_system_prompt_template(),
+            # system_prompt=self.build_system_prompt_template(),
             middleware=self.build_middlewares(),
             tools=self.build_tools(),
             state_schema=AssistantAgentState
         )
         return agent
 
-    def build_system_prompt_template(self) -> str:
-        return apply_prompt_template(user_id=self.config["configurable"]["user_id"], agent_name=AGENT_NAME,)
+    # def build_system_prompt_template(self) -> str:
+    #     return apply_prompt_template(user_id=self.config["configurable"]["user_id"], agent_name=AGENT_NAME,)
 
     def build_middlewares(self) -> list[AgentMiddleware]:
         middlewares: list[AgentMiddleware] = [
@@ -126,7 +126,8 @@ class LeaderAgent:
                 keep=("tokens", self.agent_config.summarization_trigger_tokens/3)
             ),
             ClarificationMiddleware(agent_name=AGENT_NAME),
-            TodoListMiddleware()
+            TodoListMiddleware(),
+            build_system_prompt_template,
         ]
         return middlewares
 

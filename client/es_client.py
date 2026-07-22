@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 
 from assistant.rag.doc_manager import load_documents
-from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search, ES_INDEX, create_index
+from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search
 
 
 def add_doc_to_es(client: Elasticsearch):

@@ -39,6 +39,9 @@ class AgentConfig(BaseModel):
     )
     model_cycle_max: int = Field(default=10,description="Maximum model cycle for one request")
     rerank_score_min: float = Field(default=0.8, ge=0, le=1, description="Minimum score for rerank score")
+    es_index: str = Field(default="rag_chunk_index", description="The index of es")
+    es_address: str = Field(default="http://localhost:9200", description="The address of es")
+
 
     @classmethod
     def resolve_config_path(cls, config_path: str | None = None) -> Path:

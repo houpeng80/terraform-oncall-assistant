@@ -4,20 +4,19 @@ from datetime import datetime
 from elasticsearch import Elasticsearch, helpers, ElasticsearchWarning
 from langchain_core.documents import Document
 
-ES_INDEX = "rag_chunk_index"
-ES_ADDRESS = "http://localhost:9200"
+from assistant.config.config import get_app_config
 
 warnings.filterwarnings("ignore", category=ElasticsearchWarning)
 
-def create_es_client(address:str=ES_ADDRESS) -> Elasticsearch:
+def create_es_client(address:str=get_app_config().es_address) -> Elasticsearch:
     return Elasticsearch(
         address,
         request_timeout=30
     )
 
 def create_index(client: Elasticsearch):
-    if client.indices.exists(index=ES_INDEX):
-        print(f"索引 {ES_INDEX} 已存在，跳过创建")
+    if client.indices.exists(index=get_app_config().es_index):
+        print(f"index {get_app_config().es_index} has exists，skip creating")
         return
 
     index_mapping = {
@@ -49,8 +48,8 @@ def create_index(client: Elasticsearch):
             }
         }
     }
-    client.indices.create(index=ES_INDEX, body=index_mapping)
-    print(f"索引 {ES_INDEX} 创建成功")
+    client.indices.create(index=get_app_config().es_index, body=index_mapping)
+    print(f"index {get_app_config().es_index} create successful")
 
 def build_es_bulk_actions(documents: list[tuple[str, Document]]) -> list[dict]:
     actions =[]
@@ -62,7 +61,7 @@ def build_es_bulk_actions(documents: list[tuple[str, Document]]) -> list[dict]:
         source = doc.metadata["source"]
 
         action = {
-            "_index": ES_INDEX,
+            "_index": get_app_config().es_index,
             "_id": chunk_id,  # ES文档id直接使用chunk_id，方便更新删除
             "_source": {
                 "chunk_id": chunk_id,
@@ -106,7 +105,7 @@ def es_keyword_search(client: Elasticsearch, query: str, top_k: int = 10) -> lis
             }
         }
     }
-    resp = client.search(index=ES_INDEX, body=dsl)
+    resp = client.search(index=get_app_config().es_index, body=dsl)
     result_list : list[tuple[Document, float]] = []
     for hit in resp["hits"]["hits"]:
         src = hit["_source"]
