@@ -53,6 +53,14 @@ class LeaderAgent:
     def __del__(self):
         stop_scheduler_sync_git_code()
 
+    def deal_question(self):
+        while True:
+            user_input = input("\nUser: ")
+            if user_input.lower() in ["q", "quit"]:
+                break
+
+            self.react(user_input)
+
     def react(self, question: str):
         input_message = {
             "messages": [HumanMessage(content=question)],

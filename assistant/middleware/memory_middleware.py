@@ -51,20 +51,19 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
         user_id = get_config().get("configurable", {}).get("user_id")
 
         if thread_id is None or user_id is None:
-            logger.debug("No thread_id and user_id in context, skipping memory update")
+            logger.info("No thread_id and user_id in context, skipping memory update")
             return None
 
         # Get messages from state
         messages = state.get("messages", [])
         if not messages:
-            logger.debug("No messages in state, skipping memory update")
+            logger.info("No messages in state, skipping memory update")
             return None
 
         # Filter to only keep user inputs and final assistant responses
         filtered_messages = filter_messages_for_memory(messages)
         user_messages = [m for m in filtered_messages if getattr(m, "type", None) == "human"]
         assistant_messages = [m for m in filtered_messages if getattr(m, "type", None) == "ai"]
-
         if not user_messages or not assistant_messages:
             return None
 
@@ -72,7 +71,7 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
         correction_detected = detect_correction(filtered_messages)
         reinforcement_detected = not correction_detected and detect_reinforcement(filtered_messages)
         queue = get_memory_queue()
-        queue.add_nowait(
+        queue.add(
             thread_id=thread_id,
             messages=filtered_messages,
             agent_name=self._agent_name,
@@ -80,5 +79,6 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
             correction_detected=correction_detected,
             reinforcement_detected=reinforcement_detected,
         )
+        logger.info("add message to long memory")
 
         return None

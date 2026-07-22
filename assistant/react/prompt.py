@@ -153,7 +153,7 @@ def get_agent_soul() -> str:
     3. Do not speculate, make assumptions, supplement with external general knowledge, or fabricate figures, dates, or proper nouns.
     4. Cite the source (specific document excerpt) for every key conclusion whenever possible.
     5. Do not conflate content from different documents or construct non-existent logical connections.
-    6 . Do not simplify or alter original data, parameters, or process descriptions.
+    6. Do not simplify or alter original data, parameters, or process descriptions.
     """
     if soul:
         return f"<soul>\n{soul}\n</soul>\n"

@@ -5,12 +5,8 @@ def main():
     config = {"configurable": {"thread_id": "default_thread_id", "user_id": "user_test_1"}}
 
     agent = LeaderAgent(config)
-    while True:
-        user_input = input("\nUser: ")
-        if user_input.lower() in ["q", "quit"]:
-            break
 
-        agent.react(user_input)
+    agent.deal_question()
 
     print(f"--- Terraform oncall Agent close ---")
 
