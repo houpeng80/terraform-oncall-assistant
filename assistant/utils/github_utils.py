@@ -70,7 +70,7 @@ def get_latest_version() -> str:
     code, out, err = run_git_cmd(["describe", "--tags", "--abbrev=0"], cwd=TERRAFORM_CODE_PATH)
     if code == 0:
         logger.info("get latest version success")
-        return out
+        return out.strip()
     else:
         logger.info("get latest version fail: %s", err)
         raise Exception(f"get latest version fail: {err}")
@@ -94,7 +94,7 @@ def search_resource_by_name(resource_type: str, service_name: str, resource_name
 
     return False
 
-def search_resource_by_key_word(key_word: str, search_path: str) -> list[str] | None:
+def search_resource_by_key_word(key_word: str, search_path: str) -> list[str]:
     code, out, err = run_git_cmd(["grep", "-i", "-r", key_word, search_path], cwd=TERRAFORM_CODE_PATH)
     if code == 0:
         logger.info("search %s from the %s success", key_word, search_path)
@@ -104,7 +104,7 @@ def search_resource_by_key_word(key_word: str, search_path: str) -> list[str] | 
         return res
     else:
         logger.info("search %s from the %s fail", key_word, search_path)
-        return None
+        raise Exception(f"search %s from the %s success : {err}")
 
 if "__main__" == __name__:
     print(TERRAFORM_CODE_BASE_PATH)
@@ -112,7 +112,9 @@ if "__main__" == __name__:
     # if not test_code_exists():
     #     clone_code()
 
-    # print(get_latest_version())
+    print("==================")
+    print(get_latest_version().strip())
+    print("==================")
 
     # pull_code()
 
@@ -122,7 +124,7 @@ if "__main__" == __name__:
     # print(out)
     # print("====================list_file============================")
 
-    # out = search_resource_by_api("huaweicloud_gaussdb_sql_throttling_task","huaweicloud/provider.go")
+    # out = search_resource_by_key_word("// @API LTS POST /v3/{project_id}/lts/access-config-list","huaweicloud/services/lts")
     # print("====================search_from_code============================")
     # print(type(out))
     # print(f"out={out}")
@@ -130,10 +132,10 @@ if "__main__" == __name__:
     #
     # checkout_code("v1.93.0")
     #
-    out =  list_file("huaweicloud/services/gaussdb/")
-    print("==================list_file==============================")
-    print(out)
-    print("====================list_file============================")
+    # out =  list_file("huaweicloud/services/gaussdb/")
+    # print("==================list_file==============================")
+    # print(out)
+    # print("====================list_file============================")
     #
     # out = search_from_code("/v3/{project_id}/instances/{instance_id}/transactions/list","huaweicloud/services/gaussdb")
     # print("====================search_from_code============================")

@@ -1,7 +1,8 @@
 from elasticsearch import Elasticsearch
 
+from assistant.config.config import get_app_config
 from assistant.rag.doc_manager import load_documents
-from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search
+from assistant.rag.es_manager import bulk_insert_es, create_es_client, es_keyword_search, create_index
 
 
 def add_doc_to_es(client: Elasticsearch):
@@ -17,17 +18,16 @@ def add_doc_to_es(client: Elasticsearch):
 if __name__ == '__main__':
     es_client = create_es_client()
 
+    res = es_client.indices.exists(index=get_app_config().es_address)
+    print(res)
 
-    # res = es_client.indices.exists(index=ES_INDEX)
-    # print(res)
-
-    # create_index(client=es_client)
+    create_index(client=es_client)
 
     # add_doc_to_es(es_client)
 
-    query = "Use this data source to get the ESW instance quotas."
-    final_res = es_keyword_search(es_client, query, top_k=10)
-    for res in final_res:
-        print("===========")
-        print(res)
-        print("===========")
+    # query = "Use this data source to get the ESW instance quotas."
+    # final_res = es_keyword_search(es_client, query, top_k=10)
+    # for res in final_res:
+    #     print("===========")
+    #     print(res)
+    #     print("===========")

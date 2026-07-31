@@ -1,11 +1,8 @@
-from typing import Any
-
 from langchain.agents import AgentState
 from langchain.agents.middleware import dynamic_prompt
 from langgraph.config import get_config
 
-from assistant.react.prompt import apply_prompt_template
-
+from assistant.lead_agent.prompt import apply_prompt_template
 
 @dynamic_prompt
 def build_system_prompt_template(state: AgentState) -> str:
