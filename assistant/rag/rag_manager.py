@@ -59,7 +59,7 @@ def rerank(model: CrossEncoder, query: str, documents: list[Document], top_k=5):
     return [doc for doc, score in scored_docs[:top_k] if score >= get_app_config().rerank_score_min]
 
 def rag_keyword_search(query: str, top_k: int=5) -> list[str]:
-    embedding_model = get_model("qwen_embedding")
+    embedding_model = get_model(get_app_config().embedding_model_type)
     chroma_client = get_chroma_client(embedding_model)
     es_client = create_es_client()
     chroma_res = similarity_search_from_chromadb(chroma_client, query, 30)

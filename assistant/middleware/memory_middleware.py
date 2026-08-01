@@ -1,4 +1,3 @@
-"""Middleware for memory mechanism."""
 import logging
 from typing import override, Any
 

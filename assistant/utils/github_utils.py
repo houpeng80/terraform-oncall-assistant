@@ -104,7 +104,7 @@ def search_resource_by_key_word(key_word: str, search_path: str) -> list[str]:
         return res
     else:
         logger.info("search %s from the %s fail", key_word, search_path)
-        raise Exception(f"search %s from the %s success : {err}")
+        raise Exception(f"search fail : {err}")
 
 if "__main__" == __name__:
     print(TERRAFORM_CODE_BASE_PATH)

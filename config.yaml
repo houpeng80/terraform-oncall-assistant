@@ -6,7 +6,7 @@ log_level: info
 # ============================================================================
 # The temperature of the model, defaults to 0
 # ============================================================================
-temperature: 0.1
+temperature: 0.3
 
 # ============================================================================
 # The max_tokens of the model, defaults to 1024
@@ -47,7 +47,7 @@ embedding_model_type: qwen_embedding
 # ============================================================================
 # Whether use user memory or not
 # ============================================================================
-user_memory: true
+user_memory: false
 
 # ============================================================================
 # Seconds to wait before processing queued updates (debounce), defaults to 10

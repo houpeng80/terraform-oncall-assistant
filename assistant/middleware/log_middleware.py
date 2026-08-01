@@ -12,7 +12,7 @@ from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
 from assistant.config.config import get_app_config
-from assistant.react.agent_state import AssistantAgentState
+from assistant.lead_agent.agent_state import OncallAgentState
 
 log_level = get_app_config().log_level
 
@@ -40,23 +40,23 @@ class LoggingMiddleware(AgentMiddleware):
         self._agent_name = agent_name
 
     @override
-    def before_agent(self, state: AssistantAgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_agent(self, state: OncallAgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         logger.info(" agent {%s} begin execute ", self._agent_name)
         logger.info(" state messages: %s ", state.get("messages"))
         return None
 
     @override
-    def abefore_agent(self, state: AssistantAgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def abefore_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         logger.info(" agent {%s} begin execute ", self._agent_name)
         return None
 
     @override
-    def after_agent(self, state: AssistantAgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         logger.info(" agent {%s} execute complete ", self._agent_name)
         return None
 
     @override
-    def aafter_agent(self, state: AssistantAgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def aafter_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         logger.info(" agent {%s} execute complete ", self._agent_name)
         return None
 
@@ -81,7 +81,7 @@ class LoggingMiddleware(AgentMiddleware):
     @override
     def awrap_model_call(
             self,
-            request: ModelRequest,
+            request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         model_name = request.model.model_name
@@ -107,4 +107,7 @@ class LoggingMiddleware(AgentMiddleware):
 
         logger.info(" agent {%s} call tool: tool=%s args=%s",self._agent_name, tool_name,tool_args)
 
+        resource = handler(request)
+
+        logger.info(" agent {%s} call response: %s ", self._agent_name, resource)
         return handler(request)

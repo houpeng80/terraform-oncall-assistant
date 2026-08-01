@@ -8,25 +8,23 @@ from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from assistant.config.config import get_app_config
+from assistant.lead_agent.agent_state import OncallAgentState
 from assistant.lead_agent.prompt import apply_prompt_template
 from assistant.memory.queue import get_memory_queue
 from assistant.middleware.cycle_check_middleware import CycleCheckMiddleware
 from assistant.middleware.dynamic_system_porompt_middleware import build_system_prompt_template
-from assistant.middleware.intent_clarification_middleware import IntentClarificationMiddleware
+from assistant.middleware.intent_regonize_middleware import IntentRecognizeMiddleware
 from assistant.middleware.log_middleware import LoggingMiddleware
 from assistant.middleware.memory_middleware import MemoryMiddleware
 from assistant.middleware.summarization_middleware import ContextSummarizationMiddleware
 from assistant.middleware.todo_Middleware import TodoMiddleware
 from assistant.middleware.token_usage_middleware import TokenUsageMiddleware
 from assistant.model.factory import get_model
-from assistant.react.agent_state import AssistantAgentState
 from assistant.tool import oncall_schedule, get_latest_provider_version, reference_docs
 from assistant.tool.file_tool import read_md
-from assistant.tool.intent_and_params_check_tool import intent_and_params_check
 from assistant.tool.search_tool import resource_search_tool, rag_search_tool, api_search_tool
-from assistant.tool.sub_agent_tool.intent_tool import intent_recognize
 from assistant.utils.github_utils import clone_code, test_code_exists
-from assistant.utils.schedule_utils import stop_scheduler_sync_git_code
+from assistant.utils.schedule_utils import stop_scheduler_sync_git_code, start_scheduler_sync_git_code
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +54,16 @@ class LeaderAgent:
     def __del__(self):
         stop_scheduler_sync_git_code()
 
+    def init_agent_state(self, question:str) -> dict[str, Any]:
+        initial_state = {
+            "messages": [HumanMessage(content=question)],
+            "input_token_statistics": 0,
+            "output_token_statistics": 0,
+            "total_token_statistics": 0,
+            "model_cycle_time": 1,
+        }
+        return initial_state
+
     def deal_question(self):
         while True:
             user_input = input("\nUser: ")
@@ -67,13 +75,7 @@ class LeaderAgent:
             self.react(user_input)
 
     def react(self, question: str):
-        input_message = {
-            "messages": [HumanMessage(content=question)],
-            "input_token_statistics": 0,
-            "output_token_statistics": 0,
-            "total_token_statistics": 0,
-            "model_cycle_time": 1,
-        }
+        input_message = self.init_agent_state(question)
 
         try:
             stream = self.agent.stream(
@@ -91,12 +93,6 @@ class LeaderAgent:
                             if node_name == "__interrupt__":
                                 value = update[0].value
                                 print(f"❓问题：{value['reason']}，\r\n原因：{value['course']}\r\n方案：{value['message']}")
-                            # 模型请求调用工具
-                            if node_name == "model" and update["messages"][-1].tool_calls:
-                                logger.info("[ready to call tool]: name=%s, args=%s", update['messages'][-1].tool_calls[0]['name'], update['messages'][-1].tool_calls[0]['args'])
-                            # 工具执行结果
-                            elif node_name == "tools" and update['messages'][-1].content:
-                                logger.info("[tool return]: result=%s", update['messages'][-1].content)
                     elif chunk["type"] == "messages" and chunk["data"] is not None and len(chunk["data"]) > 0:
                         if isinstance(chunk["data"][0], AIMessageChunk) and chunk["data"][0].content is not None:
                             print(chunk["data"][0].content, end="", flush=True)
@@ -117,17 +113,18 @@ class LeaderAgent:
             # system_prompt=self.build_system_prompt_template(),
             middleware=self.build_middlewares(),
             tools=self.build_tools(),
-            state_schema=AssistantAgentState
+            state_schema=OncallAgentState
         )
         return agent
 
-    def build_system_prompt_template(self) -> str:
-        return apply_prompt_template(user_id=self.config["configurable"]["user_id"], agent_name=AGENT_NAME)
+    # def build_system_prompt_template(self) -> str:
+    #     return apply_prompt_template(user_id=self.config["configurable"]["user_id"], agent_name=AGENT_NAME)
 
     def build_middlewares(self) -> list[AgentMiddleware]:
         middlewares: list[AgentMiddleware|str] = [
-            build_system_prompt_template,
             LoggingMiddleware(agent_name=AGENT_NAME),
+            IntentRecognizeMiddleware(agent_name=AGENT_NAME, config=self.config),
+            build_system_prompt_template,
             TokenUsageMiddleware(agent_name=AGENT_NAME),
             CycleCheckMiddleware(agent_name=AGENT_NAME),
             MemoryMiddleware(agent_name=AGENT_NAME),
@@ -141,14 +138,11 @@ class LeaderAgent:
                 keep=("tokens", self.agent_config.summarization_trigger_tokens/3)
             ),
             TodoMiddleware(),
-            IntentClarificationMiddleware(agent_name=AGENT_NAME),
         ]
         return middlewares
 
     def build_tools(self) -> list[BaseTool] | None:
         tools = [
-            intent_recognize,
-            intent_and_params_check,
             oncall_schedule,
             get_latest_provider_version,
             reference_docs,

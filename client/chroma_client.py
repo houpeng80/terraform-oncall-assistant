@@ -34,7 +34,7 @@ if __name__ == '__main__':
     #
     # add_doc_to_es()
 
-    query = "Use this data source to get the ESW instance quotas."
+    query = "Manager RDS backup"
     res = similarity_search_from_chromadb(client, query, 10)
     for doc in res:
         print("===========================")

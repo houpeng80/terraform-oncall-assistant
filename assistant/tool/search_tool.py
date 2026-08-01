@@ -3,12 +3,14 @@ from langchain_core.tools import tool, ToolException
 from assistant.rag.rag_manager import rag_keyword_search
 from assistant.utils.github_utils import get_latest_version, checkout_code, list_file, search_resource_by_key_word
 
-
 @tool
 def resource_search_tool(service_name: str, resource_type: str, resource_name: str) -> bool:
     """ this tool is used to check whether the resource/data_source is exist or not,
-    triggered only when check whether the resource/data_source is exist or not by service_name, resource_type and resource_name"""
+    triggered only when check whether the resource/data_source is exist or not"""
 
+    service_name = service_name.lower()
+    resource_name = resource_name.lower()
+    resource_type = resource_type.lower()
     success, err_msg = resource_param_check(service_name, resource_type, resource_name)
     if not success:
         raise ValueError(err_msg)
@@ -46,7 +48,11 @@ def resource_param_check(service_name: str, resource_type: str, resource_name: s
 @tool
 def api_search_tool(service_name: str, api_method: str, api_url: str) -> list[str] | None:
     """ this tool is used to get the resource and data_source which has support the API,
-    triggered only when get the resource and data_source by service_name, api_method and api_url"""
+    triggered only when get the resource and data_source which has support the API"""
+
+    service_name = service_name.lower()
+    api_method = api_method.lower()
+    api_url = api_url.lower()
 
     success, err_msg = api_param_check(service_name, api_method, api_url)
     if not success:
@@ -82,16 +88,17 @@ def api_param_check(service_name: str, api_method: str, api_url: str) -> tuple[b
 
 @tool
 def rag_search_tool(resource_type: str, content: str) -> list[str]:
-    """ this tool is used to get the related resource/data_source info by resource_type and account,
-    triggered only when get the related resource/data_source info by resource_type and account"""
+    """ this tool is used to get the related resource/data_source info by resource_type and content,
+    triggered only when get the related resource/data_source info by resource_type and content"""
 
+    resource_type = resource_type.lower()
     success, err_msg = rag_search_param_check(resource_type)
     if not success:
         raise ValueError(err_msg)
 
     query = ""
     if resource_type == "resource":
-        query = f"Manager {content}"
+        query = f"Manager {content} resource"
     if resource_type == "data_source":
         query = f"Use this data source to get {content}"
 
@@ -101,3 +108,7 @@ def rag_search_param_check(resource_type: str) -> tuple[bool, str]:
     if not resource_type:
         return False, "resource_type is empty"
     return True, "success"
+
+if "__main__" == __name__:
+    res = resource_search_tool("RDS", "resource", "huaweicloud_rds_notify_replace_node")
+    print(res)

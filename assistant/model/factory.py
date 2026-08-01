@@ -18,8 +18,8 @@ def create_model(model_type: str) -> BaseChatOpenAI | BaseModel:
         "max_tokens": config.max_tokens,
         "timeout": config.timeout,
         "max_retries": config.max_retries,
-        "logprobs": True,
-        "top_logprobs": 5,
+        # "logprobs": True,
+        # "top_logprobs": 5,
         "streaming": True,
     }
 

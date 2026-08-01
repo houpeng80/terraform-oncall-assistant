@@ -2,6 +2,7 @@ from assistant.model import get_model
 from assistant.rag.chroma_manager import get_chroma_client
 from assistant.rag.es_manager import create_es_client, es_keyword_search
 from assistant.rag.rag_manager import rag_keyword_search, reciprocal_rank_fusion_with_docs
+from assistant.tool import rag_search_tool
 from client.chroma_client import similarity_search_from_chromadb
 
 def get_reciprocal_rank_fusion_with_docs():
@@ -19,11 +20,12 @@ def get_reciprocal_rank_fusion_with_docs():
         print("==============")
 
 if "__main__" == __name__:
-    query = "Use this data source to get RDS instant tasks"
+    query = "RDS backup stop"
 
     # get_reciprocal_rank_fusion_with_docs()
 
-    rerank_res = rag_keyword_search(query, 10)
+    rerank_res = rag_search_tool("resource", query)
+    print(rerank_res)
     for rr in rerank_res:
         print("==============")
         print(rr)
