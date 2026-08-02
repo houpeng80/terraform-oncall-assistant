@@ -65,7 +65,7 @@ class IntentRecognize:
     def create_intent_recognize_agent(self):
         agent = create_agent(
             model=self.model,
-            checkpointer=InMemorySaver(),
+            checkpointer=self.check_pointer,
             system_prompt=SYSTEM_PROMPT,
             response_format=IntentResult,
             middleware=[
@@ -90,29 +90,36 @@ if __name__ == "__main__":
     query10 = "帮我查一下 RDS 服务的 /v3/{project_id}/instances/{instance_id}/db-jobs/{job_id}/switch 这个API支持吗"
     query11 = "可以查询当前所有的规格吗"
 
-    input_message = {
-        "messages": [HumanMessage(content=query1)],
-        "input_token_statistics": 0,
-        "output_token_statistics": 0,
-        "total_token_statistics": 0,
-        "model_cycle_time": 1,
-    }
+    # input_message = {
+    #     "messages": [HumanMessage(content=query1)],
+    #     "input_token_statistics": 0,
+    #     "output_token_statistics": 0,
+    #     "total_token_statistics": 0,
+    #     "model_cycle_time": 1,
+    # }
 
     intent_confidence = IntentRecognize(config=config)
-    res = intent_confidence.intent_recognize(agent_state=input_message)
-    print("=====================")
-    print(f"识别意图: {res.intent}")
-    print(f"置信度: {res.confidence}")
-    print(f"参数: {res.params}")
-    print(f"推理理由: {res.reasoning}")
-    querys = [query2]
-    # for query in querys:
-    #     res = intent_confidence.intent_recognize(agent_state=input_message)
-    #     print("=====================")
-    #     print(f"识别意图: {res.intent}")
-    #     print(f"置信度: {res.confidence}")
-    #     print(f"参数: {res.params}")
-    #     print(f"推理理由: {res.reasoning}")
+    # res = intent_confidence.intent_recognize(agent_state=input_message)
+    # print("=====================")
+    # print(f"识别意图: {res.intent}")
+    # print(f"置信度: {res.confidence}")
+    # print(f"参数: {res.params}")
+    # print(f"推理理由: {res.reasoning}")
+    querys = [query1, query2, query3, query4, query5, query6, query7, query8,query9,query10,query11]
+    for query in querys:
+        input_message = {
+            "messages": [HumanMessage(content=query)],
+            "input_token_statistics": 0,
+            "output_token_statistics": 0,
+            "total_token_statistics": 0,
+            "model_cycle_time": 1,
+        }
+        res = intent_confidence.intent_recognize(agent_state=input_message)
+        print("=====================")
+        print(f"识别意图: {res.intent}")
+        print(f"置信度: {res.confidence}")
+        print(f"参数: {res.params}")
+        print(f"推理理由: {res.reasoning}")
 
     # while True:
     #     user_input = input("\nUser: ")

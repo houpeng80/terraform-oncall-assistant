@@ -1,34 +1,31 @@
 import logging
 from typing import override, Any
 
-from langchain.agents import AgentState
 from langchain.agents.middleware import AgentMiddleware
 from langgraph.runtime import Runtime
 
+from assistant.lead_agent.agent_state import OncallAgentState
+
 logger = logging.getLogger(__name__)
 
-class TokenUsageMiddlewareState(AgentState):
-    input_token_statistics: int
-    output_token_statistics: int
-    total_token_statistics: int
-
-
-class TokenUsageMiddleware(AgentMiddleware[AgentState]):
+class TokenUsageMiddleware(AgentMiddleware[OncallAgentState]):
     """Logs token usage from model response usage_metadata."""
+
+    state_schema = OncallAgentState
 
     def __init__(self, agent_name: str | None = None):
         super().__init__()
         self._agent_name = agent_name
 
     @override
-    def after_model(self, state: TokenUsageMiddlewareState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         return self._log_usage(state)
 
     @override
-    async def aafter_model(self, state: TokenUsageMiddlewareState, runtime: Runtime) -> dict[str, Any] | None:
+    async def aafter_model(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         return self._log_usage(state)
 
-    def _log_usage(self, state: TokenUsageMiddlewareState) -> dict | None:
+    def _log_usage(self, state: OncallAgentState) -> dict | None:
         messages = state.get("messages", [])
         if not messages:
             return None
@@ -53,7 +50,7 @@ class TokenUsageMiddleware(AgentMiddleware[AgentState]):
         }
 
     @override
-    def after_agent(self, state: TokenUsageMiddlewareState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         logger.info(
             "agent {%s} token usage statistics: input_statistics=%s output_statistics=%s total_statistics=%s",
             self._agent_name,
@@ -64,7 +61,7 @@ class TokenUsageMiddleware(AgentMiddleware[AgentState]):
         return None
 
     @override
-    async def aafter_agent(self, state: TokenUsageMiddlewareState, runtime: Runtime) -> dict[str, Any] | None:
+    async def aafter_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
         logger.info(
             "agent {%s} token usage statistics: input_statistics=%s output_statistics=%s total_statistics=%s",
             self._agent_name,
