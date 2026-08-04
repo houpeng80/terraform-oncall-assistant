@@ -1,3 +1,4 @@
+import time
 from typing import Literal, Any
 from pydantic import BaseModel, Field
 
@@ -55,12 +56,17 @@ class IntentRecognize:
         self.agent = self.create_intent_recognize_agent()
 
     def intent_recognize(self, agent_state: OncallAgentState) -> IntentResult:
-        result = self.agent.invoke(
-            input=agent_state,
-            config=self.config,
-        )
-        intent_info = result["structured_response"]
-        return intent_info
+        i = 0
+        while i < 3:
+            result = self.agent.invoke(
+                input=agent_state,
+                config=self.config,
+            )
+            print("intent_recognize result=", result)
+            if "structured_response" in result:
+                return result["structured_response"]
+            time.sleep(1)
+        raise Exception("intent_recognize failed")
 
     def create_intent_recognize_agent(self):
         agent = create_agent(
