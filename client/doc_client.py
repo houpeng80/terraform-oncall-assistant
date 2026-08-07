@@ -1,6 +1,5 @@
 from assistant.rag.doc_manager import load_documents, split_markdown_file, get_markdown_file_description
 
-
 def load_docs():
     # "gaussdb", "rds", "dds", "compute", "geminidb", "taurusdb", "elb", "dcs", "ddm", "elb", "vpc", "cce", "dns", "dms_kafka", "dms_rocketmq", "dms_rabbitmq" "vpn"
     services = ["dms_rabbitmq", "vpn"]

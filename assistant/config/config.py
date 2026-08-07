@@ -41,6 +41,7 @@ class AgentConfig(BaseModel):
     rerank_score_min: float = Field(default=0.8, ge=0, le=1, description="Minimum score for rerank score")
     es_index: str = Field(default="rag_chunk_index", description="The index of es")
     es_address: str = Field(default="http://localhost:9200", description="The address of es")
+    open_tool_call_trace: bool = Field(default=False, description="Where open tool call trace, true/false")
 
 
     @classmethod

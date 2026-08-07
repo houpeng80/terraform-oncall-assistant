@@ -3,9 +3,9 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
-from assistant.config.config import get_app_config
 from client.chroma_client import similarity_search_from_chromadb
 
+from assistant.config.config import get_app_config
 from assistant.model import get_model
 from assistant.rag.chroma_manager import get_chroma_client
 from assistant.rag.es_manager import create_es_client, es_keyword_search
@@ -21,20 +21,38 @@ def get_cross_encoder() -> CrossEncoder:
     cross_encoder = CrossEncoder(MODEL_PATH, device="cpu", local_files_only=True)
     return cross_encoder
 
-def reciprocal_rank_fusion_with_docs(results: list[tuple[Document, float]], k=60):
+def reciprocal_rank_fusion_with_docs(
+        vector_results: list[tuple[Document, float]],
+        key_words_results: list[tuple[Document, float]],
+        vector_weight:float=0.5,
+        key_words_weight:float=0.5,
+        k=60):
+
+    if vector_weight + key_words_weight != 1:
+        raise ValueError(f"the sum of vector_weight and key_words_weight must be equal to 1")
+
     """
     融合多个检索结果，保留文档完整信息
     """
     score_dict = {}
 
-    for rank, vector_result in enumerate(results, start=1):
+    for rank, vector_result in enumerate(vector_results, start=1):
         chunk = vector_result[0]
         if chunk.id not in score_dict:
             score_dict[chunk.id] = {
                 "doc": vector_result,
                 "score": 0
             }
-        score_dict[chunk.id]["score"] += 1 / (k + rank)
+        score_dict[chunk.id]["score"] += vector_weight * (1 / (k + rank))
+
+    for rank, key_words_result in enumerate(key_words_results, start=1):
+        chunk = key_words_result[0]
+        if chunk.id not in score_dict:
+            score_dict[chunk.id] = {
+                "doc": key_words_result,
+                "score": 0
+            }
+        score_dict[chunk.id]["score"] += key_words_weight * (1 / (k + rank))
 
     # 按分数降序排序
     fused_docs = sorted(score_dict.values(), key=lambda x: x["score"], reverse=True)
@@ -66,7 +84,7 @@ def rag_keyword_search(query: str, top_k: int=5) -> list[str]:
 
     es_res = es_keyword_search(es_client, query, 30)
 
-    merged = reciprocal_rank_fusion_with_docs(chroma_res + es_res)
+    merged = reciprocal_rank_fusion_with_docs(chroma_res, es_res, 0.5, 0.5)
     merged_res = [merge["doc"][0] for merge in merged]
 
     rerank_results = rerank(get_cross_encoder(), query, merged_res, top_k=top_k)

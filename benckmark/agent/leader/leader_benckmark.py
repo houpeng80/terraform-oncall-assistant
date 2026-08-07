@@ -8,6 +8,7 @@ from langchain_core.tools import tool
 
 from assistant.config.config import get_app_config
 from assistant.model import get_model
+
 from benckmark.agent.intent_recognize.benckmark_data import BenchTask
 
 model = get_model(get_app_config().model_type)

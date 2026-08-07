@@ -1,5 +1,3 @@
-"""Prompt templates for memory update and injection."""
-
 import math
 import re
 from typing import Any

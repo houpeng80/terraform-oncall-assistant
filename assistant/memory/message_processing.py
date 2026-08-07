@@ -1,5 +1,3 @@
-"""Shared helpers for turning conversations into memory update inputs."""
-
 from __future__ import annotations
 
 import re

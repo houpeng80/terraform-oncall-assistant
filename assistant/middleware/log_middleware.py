@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import override, Any
 from collections.abc import  Callable
@@ -33,31 +34,33 @@ logging.basicConfig(level=logging_level,
                     filename=Path(__file__).parents[2] / "terraform_oncall_assistant.log")
 logger = logging.getLogger(__name__)
 
+TOOL_CALL_TRACE_PATH = Path(__file__).parents[2] / "benckmark"
+
 class LoggingMiddleware(AgentMiddleware):
 
     def __init__(self, agent_name: str | None = None):
         super().__init__()
-        self._agent_name = agent_name
+        self.agent_name = agent_name
 
     @override
     def before_agent(self, state: OncallAgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        logger.info(" agent {%s} begin execute ", self._agent_name)
+        logger.info(" agent {%s} begin execute ", self.agent_name)
         logger.info(" state messages: %s ", state.get("messages"))
         return None
 
     @override
     def abefore_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
-        logger.info(" agent {%s} begin execute ", self._agent_name)
+        logger.info(" agent {%s} begin execute ", self.agent_name)
         return None
 
     @override
     def after_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
-        logger.info(" agent {%s} execute complete ", self._agent_name)
+        logger.info(" agent {%s} execute complete ", self.agent_name)
         return None
 
     @override
     def aafter_agent(self, state: OncallAgentState, runtime: Runtime) -> dict[str, Any] | None:
-        logger.info(" agent {%s} execute complete ", self._agent_name)
+        logger.info(" agent {%s} execute complete ", self.agent_name)
         return None
 
     @override
@@ -105,9 +108,14 @@ class LoggingMiddleware(AgentMiddleware):
         tool_name = request.tool_call["name"]
         tool_args = request.tool_call["args"]
 
-        logger.info(" agent {%s} call tool: tool=%s args=%s",self._agent_name, tool_name,tool_args)
+        logger.info(" agent {%s} call tool: tool=%s args=%s",self.agent_name, tool_name, tool_args)
+        if get_app_config().open_tool_call_trace:
+            file_path = TOOL_CALL_TRACE_PATH / f"{self.agent_name}.txt"
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, "a", encoding="utf-8") as f:
+                f.write(f"tool_name: {tool_name}, args: {tool_args}\n")
 
         resource = handler(request)
 
-        logger.info(" agent {%s} call response: %s ", self._agent_name, resource)
+        logger.info(" agent {%s} call response: %s ", self.agent_name, resource)
         return handler(request)

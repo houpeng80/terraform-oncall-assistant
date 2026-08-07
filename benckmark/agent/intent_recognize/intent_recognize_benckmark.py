@@ -6,6 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from assistant.config.config import get_app_config
 from assistant.model import get_model
 from assistant.sub_agents.intent_recognition.intent_recognize import IntentRecognize
+
 from benckmark.agent.intent_recognize.benckmark_data import BenchTask, BENCHMARK_TASKS, DIMENSIONS
 
 model = get_model(get_app_config().model_type)

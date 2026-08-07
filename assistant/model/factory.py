@@ -1,11 +1,12 @@
 import os
 import httpx
+
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from langchain_deepseek import ChatDeepSeek
-from pydantic import BaseModel
 
 from assistant.config.config import get_app_config
 

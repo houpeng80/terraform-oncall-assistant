@@ -1,9 +1,10 @@
+from client.chroma_client import similarity_search_from_chromadb
+
 from assistant.model import get_model
 from assistant.rag.chroma_manager import get_chroma_client
 from assistant.rag.es_manager import create_es_client, es_keyword_search
 from assistant.rag.rag_manager import rag_keyword_search, reciprocal_rank_fusion_with_docs
 from assistant.tool import rag_search_tool
-from client.chroma_client import similarity_search_from_chromadb
 
 def get_reciprocal_rank_fusion_with_docs():
     embedding_model = get_model("qwen_embedding")
