@@ -1,9 +1,10 @@
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
+from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -11,6 +12,7 @@ from assistant.config.config import get_app_config
 from assistant.lead_agent.agent_state import OncallAgentState
 from assistant.lead_agent.prompt import apply_prompt_template
 from assistant.memory.queue import get_memory_queue
+from assistant.middleware.dynamic_tool_middleware import DynamicToolMiddleware
 from assistant.middleware.cycle_check_middleware import CycleCheckMiddleware
 from assistant.middleware.dynamic_system_porompt_middleware import build_system_prompt_template
 from assistant.middleware.intent_regonize_middleware import IntentRecognizeMiddleware
@@ -22,7 +24,6 @@ from assistant.middleware.token_usage_middleware import TokenUsageMiddleware
 from assistant.model.factory import get_model
 from assistant.tool import oncall_schedule, get_latest_provider_version, reference_docs
 from assistant.tool.file_tool import read_md
-from assistant.tool.search_tool import resource_search_tool, rag_search_tool, api_search_tool
 from assistant.utils.github_utils import clone_code, test_code_exists
 from assistant.utils.schedule_utils import stop_scheduler_sync_git_code, start_scheduler_sync_git_code
 
@@ -112,7 +113,7 @@ class LeaderAgent:
             checkpointer=self.check_pointer,
             # system_prompt=self.build_system_prompt_template(),
             middleware=self.build_middlewares(),
-            tools=self.build_tools(),
+            tools=self.build_base_tools(),
             state_schema=OncallAgentState
         )
         return agent
@@ -124,6 +125,7 @@ class LeaderAgent:
         middlewares: list[AgentMiddleware|str] = [
             LoggingMiddleware(agent_name=AGENT_NAME),
             IntentRecognizeMiddleware(agent_name=AGENT_NAME, config=self.config),
+            DynamicToolMiddleware(agent_name=AGENT_NAME),
             build_system_prompt_template,
             TokenUsageMiddleware(agent_name=AGENT_NAME),
             CycleCheckMiddleware(agent_name=AGENT_NAME),
@@ -141,14 +143,11 @@ class LeaderAgent:
         ]
         return middlewares
 
-    def build_tools(self) -> list[BaseTool] | None:
+    def build_base_tools(self) -> list[BaseTool | Callable[[Callable | Runnable], BaseTool]] | None:
         tools = [
             oncall_schedule,
             get_latest_provider_version,
             reference_docs,
-            resource_search_tool,
-            api_search_tool,
-            rag_search_tool,
             read_md,
         ]
         return tools

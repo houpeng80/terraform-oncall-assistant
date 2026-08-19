@@ -118,4 +118,4 @@ class LoggingMiddleware(AgentMiddleware):
         resource = handler(request)
 
         logger.info(" agent {%s} call response: %s ", self.agent_name, resource)
-        return handler(request)
+        return resource
