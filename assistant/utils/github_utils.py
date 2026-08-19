@@ -104,7 +104,7 @@ def search_resource_by_key_word(key_word: str, search_path: str) -> list[str]:
         return res
     else:
         logger.info("search %s from the %s fail", key_word, search_path)
-        raise Exception(f"search fail : {err}")
+        return []
 
 if "__main__" == __name__:
     print(TERRAFORM_CODE_BASE_PATH)
@@ -112,9 +112,9 @@ if "__main__" == __name__:
     # if not test_code_exists():
     #     clone_code()
 
-    print("==================")
-    print(get_latest_version().strip())
-    print("==================")
+    # print("==================")
+    # print(get_latest_version().strip())
+    # print("==================")
 
     # pull_code()
 
@@ -125,10 +125,11 @@ if "__main__" == __name__:
     # print("====================list_file============================")
 
     # out = search_resource_by_key_word("// @API LTS POST /v3/{project_id}/lts/access-config-list","huaweicloud/services/lts")
-    # print("====================search_from_code============================")
-    # print(type(out))
-    # print(f"out={out}")
-    # print("===================search_from_code=============================")
+    out = search_resource_by_key_word("// @API GaussDB POST /gaussdb/v3.1/{project_id}/instances/db-upgrade/candidate-versions","huaweicloud/services/gaussdb")
+    print("====================search_from_code============================")
+    print(type(out))
+    print(f"out={out}")
+    print("===================search_from_code=============================")
     #
     # checkout_code("v1.93.0")
     #
